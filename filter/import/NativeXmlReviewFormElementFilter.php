@@ -4,8 +4,10 @@
  * Copyright (c) 2019-2023 Lepidus Tecnologia
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  */
+namespace APP\plugins\importexport\fullJournalTransfer\filter\import;
 
-import('lib.pkp.plugins.importexport.native.filter.NativeImportFilter');
+use PKP\plugins\importexport\native\filter\NativeImportFilter;
+use PKP\db\DAORegistry;
 
 class NativeXmlReviewFormElementFilter extends NativeImportFilter
 {
@@ -25,9 +27,10 @@ class NativeXmlReviewFormElementFilter extends NativeImportFilter
         return 'review_form_element';
     }
 
-    public function getClassName()
+    public function getClassName(): string
     {
-        return 'plugins.importexport.fullJournalTransfer.filter.import.NativeXmlReviewFormElementFilter';
+//        return 'plugins.importexport.fullJournalTransfer.filter.import.NativeXmlReviewFormElementFilter';
+        return static::class;
     }
 
     public function handleElement($node)

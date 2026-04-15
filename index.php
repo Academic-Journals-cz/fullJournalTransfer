@@ -7,6 +7,4 @@
  *
  */
 
-require_once('FullJournalImportExportPlugin.inc.php');
-
-return new FullJournalImportExportPlugin();
+return new \APP\plugins\importexport\fullJournalTransfer\FullJournalImportExportPlugin();

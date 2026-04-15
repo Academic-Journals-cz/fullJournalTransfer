@@ -4,8 +4,10 @@
  * Copyright (c) 2014-2024 Lepidus Tecnologia
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  */
+namespace APP\plugins\importexport\fullJournalTransfer\filter\import;
 
-import('lib.pkp.plugins.importexport.native.filter.NativeImportFilter');
+use PKP\plugins\importexport\native\filter\NativeImportFilter;
+use PKP\db\DAORegistry;
 
 class NativeXmlNavigationMenuFilter extends NativeImportFilter
 {
@@ -17,17 +19,18 @@ class NativeXmlNavigationMenuFilter extends NativeImportFilter
 
     public function getPluralElementName()
     {
-        return 'navigation-menus';
+        return 'navigation_menus';
     }
 
     public function getSingularElementName()
     {
-        return 'navigation-menu';
+        return 'navigation_menu';
     }
 
-    public function getClassName()
+    public function getClassName(): string
     {
-        return 'plugins.importexport.fullJournalTransfer.filter.import.NativeXmlNavigationMenuFilter';
+//        return 'plugins.importexport.fullJournalTransfer.filter.import.NativeXmlNavigationMenuFilter';
+        return static::class;
     }
 
     public function handleElement($node)

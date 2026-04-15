@@ -5,23 +5,29 @@
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  */
 
-import('lib.pkp.plugins.importexport.native.filter.NativeExportFilter');
+namespace APP\plugins\importexport\fullJournalTransfer\filter\export;
 
-class JournalNativeXmlFilter extends NativeExportFilter
-{
-    public function __construct($filterGroup)
-    {
+use PKP\plugins\importexport\native\filter\NativeExportFilter;
+use PKP\db\DAORegistry;
+use DOMDocument;
+use DOMElement;
+use PKP\plugins\PluginRegistry;
+use APP\facades\Repo;
+use PKP\plugins\importexport\users\PKPUserImportExportDeployment;
+use Transliterator;
+
+class JournalNativeXmlFilter extends NativeExportFilter {
+
+    public function __construct($filterGroup) {
         $this->setDisplayName('Native XML journal export');
         parent::__construct($filterGroup);
     }
 
-    public function getClassName()
-    {
-        return 'plugins.importexport.fullJournalTransfer.filter.export.JournalNativeXmlFilter';
+    public function getClassName(): string {
+        return static::class;
     }
 
-    private function getJournalAttributeProps()
-    {
+    private function getJournalAttributeProps() {
         return [
             'urlPath',
             'enabled',
@@ -42,8 +48,7 @@ class JournalNativeXmlFilter extends NativeExportFilter
         ];
     }
 
-    private function getJournalOptionalProps()
-    {
+    private function getJournalOptionalProps() {
         return [
             'contactEmail',
             'contactName',
@@ -55,11 +60,11 @@ class JournalNativeXmlFilter extends NativeExportFilter
             'supportEmail',
             'supportName',
             'supportPhone',
+            
         ];
     }
 
-    private function getJournalLocalizedProps()
-    {
+    private function getJournalLocalizedProps() {
         return [
             'acronym',
             'authorInformation',
@@ -75,11 +80,17 @@ class JournalNativeXmlFilter extends NativeExportFilter
             'contactAffiliation',
             'description',
             'editorialTeam',
+            'submissionChecklist',
+            'beginSubmissionHelp',
+            'contributorsHelp',
+            'detailsHelp',
+            'forTheEditorsHelp',
+            'reviewHelp',
+            'uploadFilesHelp'
         ];
     }
 
-    public function &process(&$journal)
-    {
+    public function &process(&$journal) {
         $doc = new DOMDocument('1.0', 'utf-8');
         $doc->preserveWhiteSpace = false;
         $doc->formatOutput = true;
@@ -93,8 +104,7 @@ class JournalNativeXmlFilter extends NativeExportFilter
         return $doc;
     }
 
-    public function createJournalNode($doc, $journal)
-    {
+    public function createJournalNode($doc, $journal) {
         $deployment = $this->getDeployment();
         $deployment->setContext($journal);
 
@@ -107,56 +117,42 @@ class JournalNativeXmlFilter extends NativeExportFilter
 
         foreach ($this->getJournalAttributeProps() as $propName) {
             $journalNode->setAttribute(
-                $this->camelCaseToSnakeCase($propName),
-                $journal->getData($propName)
+                    $this->camelCaseToSnakeCase($propName),
+                    $journal->getData($propName)
             );
         }
         $journalNode->setAttribute(
-            'disable_submissions',
-            $journal->getData('disableSubmissions') ? 'true' : 'false'
+                'disable_submissions',
+                $journal->getData('disableSubmissions') ? 'true' : 'false'
         );
 
         $journalNode->appendChild($node = $doc->createElementNS(
-            $deployment->getNamespace(),
-            'email_signature',
-            htmlspecialchars(
-                $journal->getData('emailSignature'),
-                ENT_COMPAT,
-                'UTF-8'
-            )
+                $deployment->getNamespace(),
+                'email_signature',
+                htmlspecialchars(
+                        $journal->getData('emailSignature'),
+                        ENT_COMPAT,
+                        'UTF-8'
+                )
         ));
         $journalNode->appendChild($doc->createElementNS(
-            $deployment->getNamespace(),
-            'supported_locales',
-            htmlspecialchars(join(':', $journal->getData('supportedLocales')), ENT_COMPAT, 'UTF-8')
-        ));
+                        $deployment->getNamespace(),
+                        'supported_locales',
+                        htmlspecialchars(join(':', $journal->getData('supportedLocales')), ENT_COMPAT, 'UTF-8')
+                ));
         $journalNode->appendChild($doc->createElementNS(
-            $deployment->getNamespace(),
-            'supported_form_locales',
-            htmlspecialchars(join(':', $journal->getData('supportedFormLocales')), ENT_COMPAT, 'UTF-8')
-        ));
+                        $deployment->getNamespace(),
+                        'supported_form_locales',
+                        htmlspecialchars(join(':', $journal->getData('supportedFormLocales')), ENT_COMPAT, 'UTF-8')
+                ));
         $journalNode->appendChild($doc->createElementNS(
-            $deployment->getNamespace(),
-            'supported_submission_locales',
-            htmlspecialchars(join(':', $journal->getData('supportedSubmissionLocales')), ENT_COMPAT, 'UTF-8')
-        ));
+                        $deployment->getNamespace(),
+                        'supported_submission_locales',
+                        htmlspecialchars(join(':', $journal->getData('supportedSubmissionLocales')), ENT_COMPAT, 'UTF-8')
+                ));
 
         $this->createJournalOptionalNodes($doc, $journalNode, $journal);
         $this->createJournalLocalizedNodes($doc, $journalNode, $journal);
-
-        foreach ($journal->getData('submissionChecklist') as $locale => $submissionChecklist) {
-            $submissionChecklistNode = $doc->createElementNS($deployment->getNamespace(), 'submission_checklist');
-            $submissionChecklistNode->setAttribute('locale', $locale);
-            foreach ($submissionChecklist as $checklistItem) {
-                $submissionChecklistNode->appendChild($node = $doc->createElementNS(
-                    $deployment->getNamespace(),
-                    'submission_checklist_item',
-                    htmlspecialchars($checklistItem['content'], ENT_COMPAT, 'UTF-8')
-                ));
-                $node->setAttribute('order', $checklistItem['order']);
-            }
-            $journalNode->appendChild($submissionChecklistNode);
-        }
 
         $this->addPlugins($doc, $journalNode);
         $this->addNavigationMenuItems($doc, $journalNode, $journal);
@@ -167,58 +163,54 @@ class JournalNativeXmlFilter extends NativeExportFilter
         $this->addReviewForms($doc, $journalNode, $journal);
         $this->addIssues($doc, $journalNode, $journal);
         $this->addArticles($doc, $journalNode, $journal);
-        $this->addMetrics($doc, $journalNode, $journal);
+        //$this->addMetrics($doc, $journalNode, $journal);
 
         return $journalNode;
     }
 
-    public function createJournalOptionalNodes($doc, $journalNode, $journal)
-    {
+    public function createJournalOptionalNodes($doc, $journalNode, $journal) {
         foreach ($this->getJournalOptionalProps() as $propName) {
             $this->createOptionalNode(
-                $doc,
-                $journalNode,
-                $this->camelCaseToSnakeCase($propName),
-                $journal->getData($propName)
+                    $doc,
+                    $journalNode,
+                    $this->camelCaseToSnakeCase($propName),
+                    $journal->getData($propName)
             );
         }
     }
 
-    public function createJournalLocalizedNodes($doc, $journalNode, $journal)
-    {
+    public function createJournalLocalizedNodes($doc, $journalNode, $journal) {
         foreach ($this->getJournalLocalizedProps() as $propName) {
             $this->createLocalizedNodes(
-                $doc,
-                $journalNode,
-                $this->camelCaseToSnakeCase($propName),
-                $journal->getData($propName)
+                    $doc,
+                    $journalNode,
+                    $this->camelCaseToSnakeCase($propName),
+                    $journal->getData($propName)
             );
         }
     }
 
-    public function createSubmissionChecklistNode($doc, $parentNode, $checklist)
-    {
+    public function createSubmissionChecklistNode($doc, $parentNode, $checklist) {
         $deployment = $this->getDeployment();
 
         foreach ($checklist as $locale => $items) {
             $parentNode->appendChild($checklistNode = $doc->createElementNS(
-                $deployment->getNamespace(),
-                'submission_checklist'
+                    $deployment->getNamespace(),
+                    'submission_checklist'
             ));
             $checklistNode->setAttribute('locale', $locale);
             foreach ($items as $item) {
                 $checklistNode->appendChild($node = $doc->createElementNS(
-                    $deployment->getNamespace(),
-                    'submission_checklist_item',
-                    htmlspecialchars($item['content'], ENT_COMPAT, 'UTF-8')
+                        $deployment->getNamespace(),
+                        'submission_checklist_item',
+                        htmlspecialchars($item['content'], ENT_COMPAT, 'UTF-8')
                 ));
                 $node->setAttribute('order', $item['order']);
             }
         }
     }
 
-    public function addPlugins($doc, $journalNode)
-    {
+    public function addPlugins($doc, $journalNode) {
         $deployment = $this->getDeployment();
         $plugins = PluginRegistry::loadAllPlugins();
         $pluginsNode = $doc->createElementNS($deployment->getNamespace(), 'plugins');
@@ -231,8 +223,7 @@ class JournalNativeXmlFilter extends NativeExportFilter
         $journalNode->appendChild($pluginsNode);
     }
 
-    public function addPlugin($doc, $journalNode, $plugin)
-    {
+    public function addPlugin($doc, $journalNode, $plugin) {
         $deployment = $this->getDeployment();
         $context = $deployment->getContext();
 
@@ -261,9 +252,9 @@ class JournalNativeXmlFilter extends NativeExportFilter
                     break;
             }
             $pluginNode->appendChild($node = $doc->createElementNS(
-                $deployment->getNamespace(),
-                'plugin_setting',
-                $nodeValue
+                    $deployment->getNamespace(),
+                    'plugin_setting',
+                    $nodeValue
             ));
             $node->setAttribute('setting_name', $name);
         }
@@ -271,8 +262,7 @@ class JournalNativeXmlFilter extends NativeExportFilter
         return $pluginNode;
     }
 
-    public function addNavigationMenuItems($doc, $journalNode, $journal)
-    {
+    public function addNavigationMenuItems($doc, $journalNode, $journal) {
         $filterDao = DAORegistry::getDAO('FilterDAO');
         $nativeExportFilters = $filterDao->getObjectsByGroup('navigation-menu-item=>native-xml');
         assert(count($nativeExportFilters) == 1);
@@ -288,8 +278,7 @@ class JournalNativeXmlFilter extends NativeExportFilter
         }
     }
 
-    public function addNavigationMenus($doc, $journalNode, $journal)
-    {
+    public function addNavigationMenus($doc, $journalNode, $journal) {
         $filterDao = DAORegistry::getDAO('FilterDAO');
         $nativeExportFilters = $filterDao->getObjectsByGroup('navigation-menu=>native-xml');
         assert(count($nativeExportFilters) == 1);
@@ -305,35 +294,39 @@ class JournalNativeXmlFilter extends NativeExportFilter
         }
     }
 
-    public function addUsers($doc, $journalNode, $journal)
-    {
-        import('lib.pkp.plugins.importexport.users.PKPUserImportExportDeployment');
-
-        $userGroupDao = DAORegistry::getDAO('UserGroupDAO');
-        $usersIterator = $userGroupDao->getUsersByContextId($journal->getId());
-
-        $filterDao = DAORegistry::getDAO('FilterDAO');
-        $nativeExportFilters = $filterDao->getObjectsByGroup('user=>user-xml');
-        assert(count($nativeExportFilters) == 1);
-        $exportFilter = array_shift($nativeExportFilters);
-        $exportFilter->setDeployment(new PKPUserImportExportDeployment($journal, null));
+    public function addUsers($doc, $journalNode, $journal) {
 
         echo __('plugins.importexport.fullJournal.exportingUsers') . "\n";
 
-        $userDao = DAORegistry::getDAO('UserDAO');
-        $users = [];
-        foreach ($usersIterator->toArray() as $userId) {
-            if (is_a($userId, 'User')) {
-                $users[] = $userId;
-            } else {
-                $user = $userDao->getById($userId, $journal->getId());
-                if ($user) {
-                    $users[] = $user;
-                }
-            }
+        $contextId = (int) $journal->getId();
+
+        $users = Repo::user()
+                ->getCollector()
+                ->filterByContextIds([$contextId])
+                ->getMany()
+                ->toArray();
+
+        /** @var \FilterDAO $filterDao */
+        $filterDao = DAORegistry::getDAO('FilterDAO');
+
+        $nativeExportFilters = $filterDao->getObjectsByGroup('user=>user-xml');
+        $nativeExportFilters = is_array($nativeExportFilters) ? $nativeExportFilters : $nativeExportFilters->toArray();
+
+        if (count($nativeExportFilters) !== 1) {
+            throw new \Exception(
+                            sprintf(
+                                    'Expected exactly 1 filter for group "%s", got %d.',
+                                    'user=>user-xml',
+                                    count($nativeExportFilters)
+                            )
+                    );
         }
 
+        $exportFilter = array_shift($nativeExportFilters);
+        $exportFilter->setDeployment(new PKPUserImportExportDeployment($journal, null));
+
         $usersDoc = $exportFilter->execute($users);
+
         if ($usersDoc->documentElement instanceof DOMElement) {
             $this->removeDuplicatedInterests($usersDoc);
             $clone = $doc->importNode($usersDoc->documentElement, true);
@@ -341,8 +334,7 @@ class JournalNativeXmlFilter extends NativeExportFilter
         }
     }
 
-    public function addGenres($doc, $journalNode, $journal)
-    {
+    public function addGenres($doc, $journalNode, $journal) {
         $genreDAO = DAORegistry::getDAO('GenreDAO');
         $genres = $genreDAO->getByContextId($journal->getId())->toArray();
         $deployment = $this->getDeployment();
@@ -356,9 +348,9 @@ class JournalNativeXmlFilter extends NativeExportFilter
             $genreNode = $doc->createElementNS($deployment->getNamespace(), 'genre');
 
             $genreNode->appendChild($node = $doc->createElementNS(
-                $deployment->getNamespace(),
-                'id',
-                $genre->getId()
+                    $deployment->getNamespace(),
+                    'id',
+                    $genre->getId()
             ));
             $node->setAttribute('type', 'internal');
             $node->setAttribute('advice', 'ignore');
@@ -378,42 +370,49 @@ class JournalNativeXmlFilter extends NativeExportFilter
         $journalNode->appendChild($genresNode);
     }
 
-    public function addSections($doc, $journalNode, $journal)
-    {
-        $sectionDao = DAORegistry::getDAO('SectionDAO');
-        $sections = $sectionDao->getByJournalId($journal->getId())->toArray();
-        $deployment = $this->getDeployment();
+    public function addSections($doc, $journalNode, $journal) {
+        $contextId = (int) $journal->getId();
 
-        if (!count($sections)) {
+        $sections = Repo::section()
+                ->getCollector()
+                ->filterByContextIds([$contextId])
+                ->getMany()
+                ->toArray();
+
+        if (empty($sections)) {
             return;
         }
 
         echo __('plugins.importexport.fullJournal.exportingSections') . "\n";
 
+        $deployment = $this->getDeployment();
         $sectionsNode = $doc->createElementNS($deployment->getNamespace(), 'sections');
+
         foreach ($sections as $section) {
             $sectionNode = $doc->createElementNS($deployment->getNamespace(), 'section');
 
-            $sectionNode->appendChild($node = $doc->createElementNS(
-                $deployment->getNamespace(),
-                'id',
-                $section->getId()
-            ));
-            $node->setAttribute('type', 'internal');
-            $node->setAttribute('advice', 'ignore');
+            $idNode = $doc->createElementNS(
+                    $deployment->getNamespace(),
+                    'id',
+                    (string) $section->getId()
+            );
+            $idNode->setAttribute('type', 'internal');
+            $idNode->setAttribute('advice', 'ignore');
+            $sectionNode->appendChild($idNode);
 
             if ($section->getReviewFormId()) {
-                $sectionNode->setAttribute('review_form_id', $section->getReviewFormId());
+                $sectionNode->setAttribute('review_form_id', (string) $section->getReviewFormId());
             }
-            $sectionNode->setAttribute('ref', $section->getAbbrev($journal->getPrimaryLocale()));
-            $sectionNode->setAttribute('seq', (int) $section->getSequence());
-            $sectionNode->setAttribute('editor_restricted', $section->getEditorRestricted());
-            $sectionNode->setAttribute('meta_indexed', $section->getMetaIndexed());
-            $sectionNode->setAttribute('meta_reviewed', $section->getMetaReviewed());
-            $sectionNode->setAttribute('abstracts_not_required', $section->getAbstractsNotRequired());
-            $sectionNode->setAttribute('hide_title', $section->getHideTitle());
-            $sectionNode->setAttribute('hide_author', $section->getHideAuthor());
-            $sectionNode->setAttribute('abstract_word_count', (int) $section->getAbstractWordCount());
+
+            $sectionNode->setAttribute('ref', (string) $section->getAbbrev($journal->getPrimaryLocale()));
+            $sectionNode->setAttribute('seq', (string) (int) $section->getSequence());
+            $sectionNode->setAttribute('editor_restricted', (string) (int) $section->getEditorRestricted());
+            $sectionNode->setAttribute('meta_indexed', (string) (int) $section->getMetaIndexed());
+            $sectionNode->setAttribute('meta_reviewed', (string) (int) $section->getMetaReviewed());
+            $sectionNode->setAttribute('abstracts_not_required', (string) (int) $section->getAbstractsNotRequired());
+            $sectionNode->setAttribute('hide_title', (string) (int) $section->getHideTitle());
+            $sectionNode->setAttribute('hide_author', (string) (int) $section->getHideAuthor());
+            $sectionNode->setAttribute('abstract_word_count', (string) (int) $section->getAbstractWordCount());
 
             $this->createLocalizedNodes($doc, $sectionNode, 'abbrev', $section->getAbbrev(null));
             $this->createLocalizedNodes($doc, $sectionNode, 'policy', $section->getPolicy(null));
@@ -425,8 +424,7 @@ class JournalNativeXmlFilter extends NativeExportFilter
         $journalNode->appendChild($sectionsNode);
     }
 
-    public function addReviewForms($doc, $journalNode, $journal)
-    {
+    public function addReviewForms($doc, $journalNode, $journal) {
         $filterDao = DAORegistry::getDAO('FilterDAO');
         $nativeExportFilters = $filterDao->getObjectsByGroup('review-form=>native-xml');
         assert(count($nativeExportFilters) == 1);
@@ -443,19 +441,39 @@ class JournalNativeXmlFilter extends NativeExportFilter
         }
     }
 
-    public function addIssues($doc, $journalNode, $journal)
-    {
+    public function addIssues($doc, $journalNode, $journal) {
+        /** @var \FilterDAO $filterDao */
         $filterDao = DAORegistry::getDAO('FilterDAO');
+
         $nativeExportFilters = $filterDao->getObjectsByGroup('extended-issue=>native-xml');
-        assert(count($nativeExportFilters) == 1);
+        $nativeExportFilters = is_array($nativeExportFilters) ? $nativeExportFilters : $nativeExportFilters->toArray();
+
+        if (count($nativeExportFilters) !== 1) {
+            throw new \Exception(
+                            sprintf(
+                                    'Expected exactly 1 filter for group "%s", got %d.',
+                                    'extended-issue=>native-xml',
+                                    count($nativeExportFilters)
+                            )
+                    );
+        }
+
         $exportFilter = array_shift($nativeExportFilters);
         $exportFilter->setOpts($this->opts);
         $exportFilter->setDeployment($this->getDeployment());
 
         echo __('plugins.importexport.fullJournal.exportingIssues') . "\n";
 
-        $issueDao = DAORegistry::getDAO('IssueDAO');
-        $issuesArray = $issueDao->getIssues($journal->getId())->toArray();
+        $issuesArray = Repo::issue()
+                ->getCollector()
+                ->filterByContextIds([(int) $journal->getId()])
+                ->getMany()
+                ->toArray();
+
+        if (empty($issuesArray)) {
+            return;
+        }
+
         $issuesDoc = $exportFilter->execute($issuesArray);
 
         if ($issuesDoc->documentElement instanceof DOMElement) {
@@ -464,11 +482,22 @@ class JournalNativeXmlFilter extends NativeExportFilter
         }
     }
 
-    public function addArticles($doc, $journalNode, $journal)
-    {
+    public function addArticles($doc, $journalNode, $journal) {
         $filterDao = DAORegistry::getDAO('FilterDAO');
+
         $nativeExportFilters = $filterDao->getObjectsByGroup('extended-article=>native-xml');
-        assert(count($nativeExportFilters) == 1);
+        $nativeExportFilters = is_array($nativeExportFilters) ? $nativeExportFilters : $nativeExportFilters->toArray();
+
+        if (count($nativeExportFilters) !== 1) {
+            throw new \Exception(
+                            sprintf(
+                                    'Expected exactly 1 filter for group "%s", got %d.',
+                                    'extended-article=>native-xml',
+                                    count($nativeExportFilters)
+                            )
+                    );
+        }
+
         $exportFilter = array_shift($nativeExportFilters);
         $exportFilter->setOpts($this->opts);
         $exportFilter->setDeployment($this->getDeployment());
@@ -476,29 +505,42 @@ class JournalNativeXmlFilter extends NativeExportFilter
 
         echo __('plugins.importexport.fullJournal.exportingArticles') . "\n";
 
-        $submissionsArray = [];
-        $submissions = Services::get('submission')->getMany([
-            'contextId' => $journal->getId()
-        ]);
+        $submissions = Repo::submission()
+                ->getCollector()
+                ->filterByContextIds([(int) $journal->getId()])
+                ->getMany();
 
+        $submissions = is_array($submissions) ? $submissions : $submissions->all();
+
+        $submissionsArray = [];
+        
         foreach ($submissions as $submission) {
+
+            if (!$submission || !is_object($submission)) {
+                continue;
+            }
+
             if ($this->getDeployment()->validateSubmission($submission)) {
                 $currentPublication = $submission->getCurrentPublication();
+
                 if ($currentPublication && !$currentPublication->getData('issueId')) {
                     $submissionsArray[] = $submission;
                 }
             }
         }
 
+        if (empty($submissionsArray)) {
+            return;
+        }
+
         $articlesDoc = $exportFilter->execute($submissionsArray);
-        if ($articlesDoc->documentElement instanceof DOMElement) {
+         if ($articlesDoc && $articlesDoc->documentElement instanceof \DOMElement) {
             $clone = $doc->importNode($articlesDoc->documentElement, true);
             $journalNode->appendChild($clone);
         }
     }
 
-    public function addMetrics($doc, $journalNode, $journal)
-    {
+    public function addMetrics($doc, $journalNode, $journal) {
         $deployment = $this->getDeployment();
 
         $metricsDAO = DAORegistry::getDAO('FullJournalMetricsDAO');
@@ -539,8 +581,7 @@ class JournalNativeXmlFilter extends NativeExportFilter
         $journalNode->appendChild($metricsNode);
     }
 
-    private function removeDuplicatedInterests($usersDoc)
-    {
+    private function removeDuplicatedInterests($usersDoc) {
         $deployment = $this->getDeployment();
         $userNodes = $usersDoc->getElementsByTagNameNS($deployment->getNamespace(), 'user');
         foreach ($userNodes as $userNode) {
@@ -550,8 +591,8 @@ class JournalNativeXmlFilter extends NativeExportFilter
                 if ($node) {
                     $interests = preg_split('/,\s*/', $node->textContent);
                     $uniqueInterests = array_intersect_key(
-                        $interests,
-                        array_unique(array_map([$this, 'removeAccents'], $interests))
+                            $interests,
+                            array_unique(array_map([$this, 'removeAccents'], $interests))
                     );
                     $node->nodeValue = htmlspecialchars(implode(', ', $uniqueInterests), ENT_COMPAT, 'UTF-8');
                 }
@@ -559,19 +600,17 @@ class JournalNativeXmlFilter extends NativeExportFilter
         }
     }
 
-    public function removeAccents($string)
-    {
+    public function removeAccents($string) {
         $transliterator = Transliterator::createFromRules(
-            ':: Any-Latin; :: Latin-ASCII; :: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;',
-            Transliterator::FORWARD
+                ':: Any-Latin; :: Latin-ASCII; :: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;',
+                Transliterator::FORWARD
         );
         $normalized = $transliterator->transliterate($string);
 
         return strtolower($normalized);
     }
 
-    private function camelCaseToSnakeCase($string)
-    {
+    private function camelCaseToSnakeCase($string) {
         return strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $string));
     }
 }

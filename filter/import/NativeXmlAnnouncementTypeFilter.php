@@ -4,9 +4,11 @@
  * Copyright (c) 2014-2024 Lepidus Tecnologia
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  */
+namespace APP\plugins\importexport\fullJournalTransfer\filter\import;
 
-import('lib.pkp.plugins.importexport.native.filter.NativeImportFilter');
-import('lib.pkp.classes.services.PKPSchemaService');
+use PKP\plugins\importexport\native\filter\NativeImportFilter;
+use PKP\services\PKPSchemaService;
+use PKP\db\DAORegistry;
 
 class NativeXmlAnnouncementTypeFilter extends NativeImportFilter
 {
@@ -26,9 +28,10 @@ class NativeXmlAnnouncementTypeFilter extends NativeImportFilter
         return 'announcement_type';
     }
 
-    public function getClassName()
+    public function getClassName(): string
     {
-        return 'plugins.importexport.fullJournalTransfer.filter.import.NativeXmlAnnouncementTypeFilter';
+//        return 'plugins.importexport.fullJournalTransfer.filter.import.NativeXmlAnnouncementTypeFilter';
+        return static::class;
     }
 
     public function handleElement($node)

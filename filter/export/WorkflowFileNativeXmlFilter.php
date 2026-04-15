@@ -13,8 +13,12 @@
  *
  * @brief Filter to convert an review file to a Native XML document
  */
+namespace APP\plugins\importexport\fullJournalTransfer\filter\export;
 
-import('lib.pkp.plugins.importexport.native.filter.SubmissionFileNativeXmlFilter');
+use PKP\plugins\importexport\native\filter\SubmissionFileNativeXmlFilter;
+use DOMDocument;
+use DOMElement;
+use PKP\submissionFile\SubmissionFile;
 
 class WorkflowFileNativeXmlFilter extends SubmissionFileNativeXmlFilter
 {
@@ -23,9 +27,9 @@ class WorkflowFileNativeXmlFilter extends SubmissionFileNativeXmlFilter
         parent::__construct($filterGroup);
     }
 
-    public function getClassName()
+    public function getClassName(): string
     {
-        return 'plugins.importexport.fullJournalTransfer.filter.export.WorkflowFileNativeXmlFilter';
+        return static::class;
     }
 
     public function getSubmissionFileElementName()
@@ -33,7 +37,7 @@ class WorkflowFileNativeXmlFilter extends SubmissionFileNativeXmlFilter
         return 'workflow_file';
     }
 
-    public function createSubmissionFileNode($doc, $submissionFile)
+    public function createSubmissionFileNode(DOMDocument $doc, SubmissionFile $submissionFile): ?DOMElement
     {
         $deployment =  $this->getDeployment();
         $submissionFileNode = parent::createSubmissionFileNode($doc, $submissionFile);

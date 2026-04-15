@@ -47,14 +47,13 @@
 			<element name="contact_affiliation" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
 			<element name="description" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
 			<element name="editorial_team" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="submission_checklist" minOccurs="1" maxOccurs="unbounded">
-				<complexType>
-					<sequence>
-						<element name="submission_checklist_item" minOccurs="0" maxOccurs="unbounded" />
-					</sequence>
-					<attribute name="locale" type="string" />
-				</complexType>
-			</element>
+			<element name="submission_checklist" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
+                        <element name="begin_submission_help" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
+                        <element name="contributors_help" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
+                        <element name="details_help" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
+                        <element name="for_the_editors_help" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
+                        <element name="review_help" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
+                        <element name="upload_files_help" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
 			<element ref="pkp:plugins" minOccurs="0" maxOccurs="unbounded" />
 			<element ref="pkp:navigation_menu_items" minOccurs="0" maxOccurs="unbounded" />
 			<element ref="pkp:navigation_menus" minOccurs="0" maxOccurs="unbounded" />
@@ -337,7 +336,7 @@
         <attribute name="date_due" type="string" />
         <attribute name="date_response_due" type="string" />
         <attribute name="last_modified" type="string" />
-        <attribute name="unconsidered" type="string" />
+        <attribute name="considered" type="string" />
         <attribute name="was_automatic" type="string" />
         <attribute name="recommendation" type="string" use="optional"/>
         <attribute name="quality" type="string" use="optional" />

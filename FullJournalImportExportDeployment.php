@@ -5,7 +5,9 @@
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  */
 
-import('plugins.importexport.native.NativeImportExportDeployment');
+namespace APP\plugins\importexport\fullJournalTransfer;;
+
+use APP\plugins\importexport\native\NativeImportExportDeployment;
 
 class FullJournalImportExportDeployment extends NativeImportExportDeployment
 {

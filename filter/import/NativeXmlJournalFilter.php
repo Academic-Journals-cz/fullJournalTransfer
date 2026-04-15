@@ -5,40 +5,59 @@
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  */
 
-import('lib.pkp.classes.services.PKPSchemaService');
-import('lib.pkp.plugins.importexport.native.filter.NativeImportFilter');
-import('lib.pkp.plugins.importexport.users.PKPUserImportExportDeployment');
+namespace APP\plugins\importexport\fullJournalTransfer\filter\import;
 
-class NativeXmlJournalFilter extends NativeImportFilter
-{
-    public function __construct($filterGroup)
-    {
+use PKP\services\PKPSchemaService;
+use PKP\plugins\importexport\native\filter\NativeImportFilter;
+use PKP\plugins\importexport\users\PKPUserImportExportDeployment;
+use PKP\db\DAORegistry;
+use APP\core\Application;
+use DOMDocument;
+use DOMElement;
+use PKP\plugins\PluginRegistry;
+use APP\facades\Repo;
+use Transliterator;
+use APP\core\Services;
+use PKP\file\ContextFileManager;
+use PKP\file\FileManager;
+
+class NativeXmlJournalFilter extends NativeImportFilter {
+
+    public function __construct($filterGroup) {
         $this->setDisplayName('Native XML journal import');
         parent::__construct($filterGroup);
     }
 
-    public function getSingularElementName()
-    {
+    public function getPluralElementName(): string {
+        return 'journals';
+    }
+
+    public function getSingularElementName(): string {
         return 'journal';
     }
 
-    public function getClassName()
-    {
-        return 'plugins.importexport.fullJournalTransfer.filter.import.NativeXmlJournalFilter';
+    public function getClassName(): string {
+        return static::class;
     }
 
-    public function handleElement($node)
-    {
+    public function handleElement($node) {
         $deployment = $this->getDeployment();
 
         echo __('plugins.importexport.fullJournal.importingJournal') . "\n";
 
+        $primaryLocale = $node->getAttribute('primary_locale') ?: 'en';
         $contextDAO = Application::get()->getContextDAO();
+        
         $journal = $contextDAO->newDataObject();
         $journal->setSequence((int) $node->getAttribute('seq'));
         $journal->setPath($node->getAttribute('url_path'));
-        $journal->setPrimaryLocale($node->getAttribute('primary_locale'));
+        $journal->setPrimaryLocale($primaryLocale);
         $journal->setEnabled((bool) $node->getAttribute('enabled'));
+        
+        $journal->setData('supportedLocales', [$primaryLocale]);
+        $journal->setData('supportedFormLocales', [$primaryLocale]);
+        $journal->setData('supportedSubmissionLocales', [$primaryLocale]);
+        
         $journal->setData('copyrightYearBasis', $node->getAttribute('copyright_year_basis'));
         $journal->setData('defaultReviewMode', (int) $node->getAttribute('default_review_mode'));
         $journal->setData('disableSubmissions', (bool) $node->getAttribute('disable_submissions') === 'true' ? true : false);
@@ -66,8 +85,7 @@ class NativeXmlJournalFilter extends NativeImportFilter
         return $journal;
     }
 
-    private function validateActiveTheme($node)
-    {
+    private function validateActiveTheme($node) {
         $plugin = PluginRegistry::loadPlugin('themes', $node->getAttribute('theme_plugin_path'));
         if ($plugin) {
             return $node->getAttribute('theme_plugin_path');
@@ -75,13 +93,11 @@ class NativeXmlJournalFilter extends NativeImportFilter
         return 'default';
     }
 
-    public function createJournalDirs($journal, $deployment)
-    {
+    public function createJournalDirs($journal, $deployment) {
         if ($deployment->isTestEnv) {
             return;
         }
 
-        import('lib.pkp.classes.file.FileManager');
         $fileManager = new \FileManager();
         $contextService = Services::get('context');
         foreach ($contextService->installFileDirs as $dir) {
@@ -92,8 +108,7 @@ class NativeXmlJournalFilter extends NativeImportFilter
         }
     }
 
-    public function handleChildElement($node, $journal)
-    {
+    public function handleChildElement($node, $journal) {
         $deployment = $this->getDeployment();
         $deployment->setContext($journal);
 
@@ -113,9 +128,6 @@ class NativeXmlJournalFilter extends NativeImportFilter
         } elseif (in_array($tagName, $localesNodeMapping)) {
             $locales = preg_split('/:/', $node->textContent);
             $journal->setData($propName, $locales);
-        } elseif ($tagName === 'submission_checklist') {
-            list($locale, $items) = $this->parseSubmissionChecklist($node);
-            $journal->setData($propName, $items, $locale);
         }
 
         $tagMethodMap = [
@@ -128,8 +140,8 @@ class NativeXmlJournalFilter extends NativeImportFilter
             'review_forms' => 'parseReviewForms',
             'extended_issues' => 'parseIssues',
             'extended_issue' => 'parseIssue',
-            'extended_articles' => 'parseArticles',
-            'metrics' => 'parseMetrics'
+            'extended_articles' => 'parseArticles'
+//            'metrics' => 'parseMetrics'
         ];
 
         if ($node instanceof DOMElement) {
@@ -143,8 +155,7 @@ class NativeXmlJournalFilter extends NativeImportFilter
         $this->logIdRelation($journal);
     }
 
-    public function parseSubmissionChecklist($node)
-    {
+    public function parseSubmissionChecklist($node) {
         $locale = $node->getAttribute('locale');
         $items = [];
         for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
@@ -158,8 +169,7 @@ class NativeXmlJournalFilter extends NativeImportFilter
         return [$locale, $items];
     }
 
-    public function parsePlugins($node, $journal)
-    {
+    public function parsePlugins($node, $journal) {
         for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
             if (is_a($n, 'DOMElement') && $n->tagName === 'plugin') {
                 $this->parsePlugin($n, $journal);
@@ -177,18 +187,17 @@ class NativeXmlJournalFilter extends NativeImportFilter
         }
     }
 
-    public function parsePlugin($node, $journal)
-    {
+    public function parsePlugin($node, $journal) {
         $pluginSettingsDAO = DAORegistry::getDAO('PluginSettingsDAO');
         $pluginName = $node->getAttribute('plugin_name');
 
         for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
             if (is_a($n, 'DOMElement') && $n->tagName == 'plugin_setting') {
                 $pluginSettingsDAO->updateSetting(
-                    $journal->getId(),
-                    $pluginName,
-                    $n->getAttribute('setting_name'),
-                    $n->textContent
+                        $journal->getId(),
+                        $pluginName,
+                        $n->getAttribute('setting_name'),
+                        $n->textContent
                 );
             }
         }
@@ -196,8 +205,7 @@ class NativeXmlJournalFilter extends NativeImportFilter
         return $pluginSettingsDAO->getPluginSettings($journal->getId(), $pluginName);
     }
 
-    public function parseNavigationMenuItems($node)
-    {
+    public function parseNavigationMenuItems($node) {
         for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
             if (is_a($n, 'DOMElement') && $n->tagName === 'navigation_menu_item') {
                 $this->parseNavigationMenuItem($n);
@@ -205,8 +213,7 @@ class NativeXmlJournalFilter extends NativeImportFilter
         }
     }
 
-    public function parseNavigationMenuItem($node)
-    {
+    public function parseNavigationMenuItem($node) {
         $filterDao = DAORegistry::getDAO('FilterDAO');
         $importFilters = $filterDao->getObjectsByGroup('native-xml=>navigation-menu-item');
         assert(count($importFilters) == 1);
@@ -217,8 +224,7 @@ class NativeXmlJournalFilter extends NativeImportFilter
         return $importFilter->execute($navigationMenuItemDoc);
     }
 
-    public function parseNavigationMenus($node)
-    {
+    public function parseNavigationMenus($node) {
         for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
             if (is_a($n, 'DOMElement') && $n->tagName === 'navigation_menu') {
                 $this->parseNavigationMenu($n);
@@ -226,8 +232,7 @@ class NativeXmlJournalFilter extends NativeImportFilter
         }
     }
 
-    public function parseNavigationMenu($node)
-    {
+    public function parseNavigationMenu($node) {
         $filterDao = DAORegistry::getDAO('FilterDAO');
         $importFilters = $filterDao->getObjectsByGroup('native-xml=>navigation-menu');
         assert(count($importFilters) == 1);
@@ -238,8 +243,7 @@ class NativeXmlJournalFilter extends NativeImportFilter
         return $importFilter->execute($navigationMenuDoc);
     }
 
-    public function parseUsers($node, $journal)
-    {
+    public function parseUsers($node, $journal) {
         $filterDao = DAORegistry::getDAO('FilterDAO');
         $userFilters = $filterDao->getObjectsByGroup('native-xml=>user');
         assert(count($userFilters) == 1);
@@ -256,17 +260,15 @@ class NativeXmlJournalFilter extends NativeImportFilter
         return $filter->execute($usersXml);
     }
 
-    public function parseGenres($node, $journal)
-    {
+    public function parseGenres($node, $journal) {
         for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
-            if (is_a($n, 'DOMElement') && $n->tagName  === 'genre') {
+            if (is_a($n, 'DOMElement') && $n->tagName === 'genre') {
                 $this->parseGenre($n, $journal);
             }
         }
     }
 
-    public function parseGenre($node, $journal)
-    {
+    public function parseGenre($node, $journal) {
         $genreDAO = DAORegistry::getDAO('GenreDAO');
         $genre = $genreDAO->newDataObject();
         $genre->setContextId($journal->getId());
@@ -290,33 +292,41 @@ class NativeXmlJournalFilter extends NativeImportFilter
         $genreId = $genreDAO->insertObject($genre);
     }
 
-    public function parseSections($node, $journal)
-    {
+    public function parseSections($node, $journal) {
         echo __('plugins.importexport.fullJournal.importingSections') . "\n";
 
         for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
-            if (is_a($n, 'DOMElement') && $n->tagName  === 'section') {
+            if (is_a($n, 'DOMElement') && $n->tagName === 'section') {
                 $this->parseSection($n, $journal);
             }
         }
     }
 
-    public function parseSection($node, $journal)
-    {
+    public function parseSection($node, $journal) {
         $deployment = $this->getDeployment();
 
-        $sectionDAO = DAORegistry::getDAO('SectionDAO');
-        $section = $sectionDAO->newDataObject();
+        $section = Repo::section()->newDataObject();
+        
         $section->setContextId($journal->getId());
-        $section->setReviewFormId($node->getAttribute('review_form_id'));
-        $section->setSequence($node->getAttribute('seq'));
+        
+        $oldReviewFormId = $node->getAttribute('review_form_id');
+        $reviewFormId = null;
+
+        if ($oldReviewFormId !== '') {
+            $mappedReviewFormId = $deployment->getReviewFormDBId($oldReviewFormId);
+            $reviewFormId = $mappedReviewFormId ?: null;
+        }
+
+        $section->setReviewFormId($reviewFormId);
+        
+        $section->setSequence((int) $node->getAttribute('seq'));
         $section->setEditorRestricted($node->getAttribute('editor_restricted'));
         $section->setMetaIndexed($node->getAttribute('meta_indexed'));
         $section->setMetaReviewed($node->getAttribute('meta_reviewed'));
         $section->setAbstractsNotRequired($node->getAttribute('abstracts_not_required'));
         $section->setHideAuthor($node->getAttribute('hide_author'));
         $section->setHideTitle($node->getAttribute('hide_title'));
-        $section->setAbstractWordCount($node->getAttribute('abstract_word_count'));
+        $section->setAbstractWordCount((int) $node->getAttribute('abstract_word_count'));
 
         $unknownNodes = array();
         for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
@@ -336,14 +346,14 @@ class NativeXmlJournalFilter extends NativeImportFilter
                     case 'policy':
                         list($locale, $value) = $this->parseLocalizedContent($n);
                         if (empty($locale)) {
-                            $locale = $context->getPrimaryLocale();
+                            $locale = $journal->getPrimaryLocale();
                         }
                         $section->setPolicy($value, $locale);
                         break;
                     case 'title':
                         list($locale, $value) = $this->parseLocalizedContent($n);
                         if (empty($locale)) {
-                            $locale = $context->getPrimaryLocale();
+                            $locale = $journal->getPrimaryLocale();
                         }
                         $section->setTitle($value, $locale);
                         break;
@@ -353,30 +363,29 @@ class NativeXmlJournalFilter extends NativeImportFilter
             }
         }
 
-        $sectionId = $sectionDAO->insertObject($section);
+        
+        $sectionId = (int) Repo::section()->add($section);
         if (count($unknownNodes)) {
             foreach ($unknownNodes as $tagName) {
                 $deployment->addWarning(
-                    ASSOC_TYPE_SECTION,
-                    $sectionId,
-                    __('plugins.importexport.common.error.unknownElement', ['param' => $tagName])
+                        ASSOC_TYPE_SECTION,
+                        $sectionId,
+                        __('plugins.importexport.common.error.unknownElement', ['param' => $tagName])
                 );
             }
         }
         $deployment->addProcessedObjectId(ASSOC_TYPE_SECTION, $sectionId);
     }
 
-    public function parseReviewForms($node, $journal)
-    {
+    public function parseReviewForms($node, $journal) {
         for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
-            if (is_a($n, 'DOMElement') && $n->tagName  === 'review_form') {
+            if (is_a($n, 'DOMElement') && $n->tagName === 'review_form') {
                 $this->parseReviewForm($n, $journal);
             }
         }
     }
 
-    public function parseReviewForm($node, $journal)
-    {
+    public function parseReviewForm($node, $journal) {
         $filterDao = DAORegistry::getDAO('FilterDAO');
         $importFilters = $filterDao->getObjectsByGroup('native-xml=>review-form');
         assert(count($importFilters) == 1);
@@ -388,17 +397,16 @@ class NativeXmlJournalFilter extends NativeImportFilter
         return $importedObjects;
     }
 
-    public function parseIssues($node, $journal)
-    {
+    public function parseIssues($node, $journal) {
         $deployment = $this->getDeployment();
 
         echo __('plugins.importexport.fullJournal.importingIssues') . "\n";
         for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
             if (is_a($n, 'DOMElement')) {
-                if ($n->tagName  === 'extended_issue') {
+                if ($n->tagName === 'extended_issue') {
                     $this->parseIssue($n, $journal);
                 }
-                if ($n->tagName  === 'custom_order') {
+                if ($n->tagName === 'custom_order') {
                     $this->parseIssueOrder($n, $journal);
                 }
             }
@@ -410,8 +418,7 @@ class NativeXmlJournalFilter extends NativeImportFilter
         }
     }
 
-    public function parseIssue($node, $journal)
-    {
+    public function parseIssue($node, $journal) {
         $filterDao = DAORegistry::getDAO('FilterDAO');
         $importFilters = $filterDao->getObjectsByGroup('native-xml=>extended-issue');
         assert(count($importFilters) == 1);
@@ -423,8 +430,8 @@ class NativeXmlJournalFilter extends NativeImportFilter
         return $importedObjects;
     }
 
-    public function parseIssueOrder($node, $journal)
-    {
+
+    public function parseIssueOrder($node, $journal) {
         $deployment = $this->getDeployment();
 
         $issueId = $deployment->getIssueDBId($node->getAttribute('id'));
@@ -434,19 +441,17 @@ class NativeXmlJournalFilter extends NativeImportFilter
         $issueDAO->moveCustomIssueOrder($journal->getId(), $issueId, $customOrder);
     }
 
-    public function parseArticles($node, $journal)
-    {
+    public function parseArticles($node, $journal) {
         echo __('plugins.importexport.fullJournal.importingArticles') . "\n";
 
         for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
-            if (is_a($n, 'DOMElement') && $n->tagName  === 'extended_article') {
+            if (is_a($n, 'DOMElement') && $n->tagName === 'extended_article') {
                 $this->parseArticle($n, $journal);
             }
         }
     }
 
-    public function parseArticle($node, $journal)
-    {
+    public function parseArticle($node, $journal) {
         $filterDao = DAORegistry::getDAO('FilterDAO');
         $importFilters = $filterDao->getObjectsByGroup('native-xml=>extended-article');
         assert(count($importFilters) == 1);
@@ -457,65 +462,61 @@ class NativeXmlJournalFilter extends NativeImportFilter
         return $importFilter->execute($articleDoc);
     }
 
-    public function parseMetrics($node, $journal)
-    {
+//    public function parseMetrics($node, $journal) {
+//        $deployment = $this->getDeployment();
+//        echo __('plugins.importexport.fullJournal.importingMetrics') . "\n";
+//
+//        $metricKeys = [
+//            'assoc_type', 'day', 'country_id', 'region', 'city', 'file_type', 'metric', 'metric_type', 'load_id'
+//        ];
+//
+//        for ($childNode = $node->firstChild; $childNode !== null; $childNode = $childNode->nextSibling) {
+//            if (is_a($childNode, 'DOMElement') && $childNode->tagName === 'metric') {
+//                $record = [];
+//                foreach ($metricKeys as $key) {
+//                    $record[$key] = $childNode->getAttribute($key);
+//                }
+//                $oldAssocId = $childNode->getAttribute('assoc_id');
+//                switch ($record['assoc_type']) {
+//                    case ASSOC_TYPE_SUBMISSION_FILE:
+//                    case ASSOC_TYPE_SUBMISSION_FILE_COUNTER_OTHER:
+//                        $record['assoc_id'] = $deployment->getSubmissionFileDBId($oldAssocId);
+//                        break;
+//                    case ASSOC_TYPE_REPRESENTATION:
+//                        $record['assoc_id'] = $deployment->getRepresentationDBId($oldAssocId);
+//                        break;
+//                    case ASSOC_TYPE_SUBMISSION:
+//                        $record['assoc_id'] = $deployment->getSubmissionDBId($oldAssocId);
+//                        break;
+//                    case Application::getContextAssocType():
+//                        $record['assoc_id'] = $journal->getId();
+//                        break;
+//                    case ASSOC_TYPE_ISSUE_GALLEY:
+//                        $record['assoc_id'] = $deployment->getIssueGalleyDBId($oldAssocId);
+//                        break;
+//                    case ASSOC_TYPE_ISSUE:
+//                        $record['assoc_id'] = $deployment->getIssueDBId($oldAssocId);
+//                        break;
+//                }
+//                $metricsDAO = DAORegistry::getDAO('MetricsDAO');
+//                try {
+//                    $metricsDAO->insertRecord($record);
+//                } catch (Exception $e) {
+//                    $deployment->addWarning(
+//                            ASSOC_TYPE_JOURNAL,
+//                            $journal->getId(),
+//                            __(
+//                                    'plugins.importexport.fullJournal.error.metric',
+//                                    ['reason' => $e->getMessage()]
+//                            )
+//                    );
+//                }
+//            }
+//        }
+//    }
+
+    public function logIdRelation($journal) {
         $deployment = $this->getDeployment();
-        echo __('plugins.importexport.fullJournal.importingMetrics') . "\n";
-
-        $metricKeys = [
-            'assoc_type', 'day', 'country_id', 'region', 'city', 'file_type', 'metric', 'metric_type', 'load_id'
-        ];
-
-        for ($childNode = $node->firstChild; $childNode !== null; $childNode = $childNode->nextSibling) {
-            if (is_a($childNode, 'DOMElement') && $childNode->tagName  === 'metric') {
-                $record = [];
-                foreach ($metricKeys as $key) {
-                    $record[$key] = $childNode->getAttribute($key);
-                }
-                $oldAssocId = $childNode->getAttribute('assoc_id');
-                switch ($record['assoc_type']) {
-                    case ASSOC_TYPE_SUBMISSION_FILE:
-                    case ASSOC_TYPE_SUBMISSION_FILE_COUNTER_OTHER:
-                        $record['assoc_id'] = $deployment->getSubmissionFileDBId($oldAssocId);
-                        break;
-                    case ASSOC_TYPE_REPRESENTATION:
-                        $record['assoc_id'] = $deployment->getRepresentationDBId($oldAssocId);
-                        break;
-                    case ASSOC_TYPE_SUBMISSION:
-                        $record['assoc_id'] = $deployment->getSubmissionDBId($oldAssocId);
-                        break;
-                    case Application::getContextAssocType():
-                        $record['assoc_id'] = $journal->getId();
-                        break;
-                    case ASSOC_TYPE_ISSUE_GALLEY:
-                        $record['assoc_id'] = $deployment->getIssueGalleyDBId($oldAssocId);
-                        break;
-                    case ASSOC_TYPE_ISSUE:
-                        $record['assoc_id'] = $deployment->getIssueDBId($oldAssocId);
-                        break;
-                }
-                $metricsDAO = DAORegistry::getDAO('MetricsDAO');
-                try {
-                    $metricsDAO->insertRecord($record);
-                } catch (Exception $e) {
-                    $deployment->addWarning(
-                        ASSOC_TYPE_JOURNAL,
-                        $journal->getId(),
-                        __(
-                            'plugins.importexport.fullJournal.error.metric',
-                            ['reason' => $e->getMessage()]
-                        )
-                    );
-                }
-            }
-        }
-    }
-
-    public function logIdRelation($journal)
-    {
-        $deployment = $this->getDeployment();
-
-        import('lib.pkp.classes.file.ContextFileManager');
         $contextFileManager = new ContextFileManager($journal->getId());
         $journalFilesDir = $contextFileManager->getBasePath();
 
@@ -524,14 +525,13 @@ class NativeXmlJournalFilter extends NativeImportFilter
 
         $contents = "Original ID\tNew ID\n";
         foreach ($deployment->getSubmissionDBIds() as $oldId => $newId) {
-            $contents .= "${oldId}\t${newId}\n";
+            $contents .= "{$oldId}\t{$newId}\n";
         }
 
         $contextFileManager->writeFile($filePath, $contents);
     }
 
-    private function getSimpleJournalNodeMapping()
-    {
+    private function getSimpleJournalNodeMapping() {
         return [
             'email_signature',
             'contact_email',
@@ -543,12 +543,13 @@ class NativeXmlJournalFilter extends NativeImportFilter
             'publisher_institution',
             'support_email',
             'support_name',
-            'support_phone'
+            'support_phone',
+            'date_published',
+            'date_modified'
         ];
     }
 
-    private function getLocalizedJournalNodeMapping()
-    {
+    private function getLocalizedJournalNodeMapping() {
         return [
             'acronym',
             'author_information',
@@ -564,11 +565,17 @@ class NativeXmlJournalFilter extends NativeImportFilter
             'contact_affiliation',
             'description',
             'editorial_team',
+            'submission_checklist',
+            'begin_submission_help',
+            'contributors_help',
+            'details_help',
+            'for_the_editors_help',
+            'review_help',
+            'upload_files_help'
         ];
     }
 
-    private function getLocalesJournalNodeMapping()
-    {
+    private function getLocalesJournalNodeMapping() {
         return [
             'supported_locales',
             'supported_form_locales',
@@ -576,8 +583,7 @@ class NativeXmlJournalFilter extends NativeImportFilter
         ];
     }
 
-    private function snakeToCamel($text)
-    {
+    private function snakeToCamel($text) {
         return lcfirst(str_replace(' ', '', ucwords(str_replace('_', ' ', $text))));
     }
 }

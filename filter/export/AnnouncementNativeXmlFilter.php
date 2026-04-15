@@ -4,8 +4,11 @@
  * Copyright (c) 2014-2024 Lepidus Tecnologia
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  */
+namespace APP\plugins\importexport\fullJournalTransfer\filter\export;
 
-import('lib.pkp.plugins.importexport.native.filter.NativeExportFilter');
+use PKP\plugins\importexport\native\filter\NativeExportFilter;
+use DOMDocument;
+use DOMElement;
 
 class AnnouncementNativeXmlFilter extends NativeExportFilter
 {
@@ -15,9 +18,9 @@ class AnnouncementNativeXmlFilter extends NativeExportFilter
         parent::__construct($filterGroup);
     }
 
-    public function getClassName()
+    public function getClassName(): string
     {
-        return 'plugins.importexport.fullJournalTransfer.filter.export.AnnouncementNativeXmlFilter';
+        return static::class;
     }
 
     public function &process(&$announcements)

@@ -1,12 +1,18 @@
 <?php
+namespace APP\plugins\importexport\fullJournalTransfer\filter\import;
 
-import('plugins.importexport.native.filter.NativeXmlIssueFilter');
+use APP\plugins\importexport\native\filter\NativeXmlIssueFilter;
+use PKP\db\DAORegistry;
+use APP\plugins\importexport\native\filter\NativeFilterHelper;
+use DOMDocument;
+use DOMElement;
+use APP\facades\Repo;
 
 class NativeXmlExtendedIssueFilter extends NativeXmlIssueFilter
 {
-    public function getClassName()
+    public function getClassName(): string
     {
-        return 'plugins.importexport.fullJournalTransfer.filter.import.NativeXmlExtendedIssueFilter';
+        return static::class;
     }
 
     public function getPluralElementName()
@@ -35,9 +41,9 @@ class NativeXmlExtendedIssueFilter extends NativeXmlIssueFilter
                     $deployment->setIssueDBId($childNode->textContent, $issue->getId());
                 }
             }
-
-            if ($issue->getCurrent()) {
-                $deployment->setCurrentIssue($issue);
+            $currentIssue = Repo::issue()->getCurrent($journal->getId());
+            if ($currentIssue) {
+                $deployment->setCurrentIssue($currentIssue);
             }
         }
 
