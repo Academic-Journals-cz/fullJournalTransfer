@@ -4,7 +4,7 @@
 This plugin allows you to import and export all the content of a journal.
 
 ## Compatibility
-*branche stable_3-4-0**
+**branche stable_3-4-0**
 Compatible with OJS 3.4.0. Not fully completed yet.
 - missing metrics
 - missing issue dates
