@@ -1,4 +1,5 @@
 <?php
+
 namespace APP\plugins\importexport\fullJournalTransfer\filter\import;
 
 use APP\plugins\importexport\native\filter\NativeXmlIssueFilter;
@@ -8,25 +9,21 @@ use DOMDocument;
 use DOMElement;
 use APP\facades\Repo;
 
-class NativeXmlExtendedIssueFilter extends NativeXmlIssueFilter
-{
-    public function getClassName(): string
-    {
+class NativeXmlExtendedIssueFilter extends NativeXmlIssueFilter {
+
+    public function getClassName(): string {
         return static::class;
     }
 
-    public function getPluralElementName()
-    {
+    public function getPluralElementName() {
         return 'extended_issues';
     }
 
-    public function getSingularElementName()
-    {
+    public function getSingularElementName() {
         return 'extended_issue';
     }
 
-    public function handleElement($node)
-    {
+    public function handleElement($node) {
         $deployment = $this->getDeployment();
         $journal = $deployment->getContext();
         $issue = parent::handleElement($node);
@@ -34,9 +31,7 @@ class NativeXmlExtendedIssueFilter extends NativeXmlIssueFilter
         if ($issue) {
             for ($childNode = $node->firstChild; $childNode !== null; $childNode = $childNode->nextSibling) {
                 if (
-                    is_a($childNode, 'DOMElement')
-                    && $childNode->tagName == 'id'
-                    && $childNode->getAttribute('type') == 'internal'
+                        is_a($childNode, 'DOMElement') && $childNode->tagName == 'id' && $childNode->getAttribute('type') == 'internal'
                 ) {
                     $deployment->setIssueDBId($childNode->textContent, $issue->getId());
                 }
@@ -50,8 +45,7 @@ class NativeXmlExtendedIssueFilter extends NativeXmlIssueFilter
         return $issue;
     }
 
-    public function handleChildElement($node, $issue, $processOnlyChildren)
-    {
+    public function handleChildElement($node, $issue, $processOnlyChildren) {
         $deployment = $this->getDeployment();
         $context = $deployment->getContext();
 
@@ -70,7 +64,7 @@ class NativeXmlExtendedIssueFilter extends NativeXmlIssueFilter
         } elseif (isset($dateSetterMappings[$node->tagName])) {
             if (!$processOnlyChildren) {
                 $setterFunction = $dateSetterMappings[$node->tagName];
-                $issue->$setterFunction(strtotime($node->textContent));
+                $issue->$setterFunction($this->parseXmlDateTime($node->textContent));
             }
         } else {
             switch ($node->tagName) {
@@ -108,8 +102,20 @@ class NativeXmlExtendedIssueFilter extends NativeXmlIssueFilter
         }
     }
 
-    public function parseArticles($node, $issue)
-    {
+    private function parseXmlDateTime(?string $value): ?string {
+        if (!$value) {
+            return null;
+        }
+
+        $timestamp = strtotime(trim($value));
+        if ($timestamp === false) {
+            return null;
+        }
+
+        return date('Y-m-d H:i:s', $timestamp);
+    }
+
+    public function parseArticles($node, $issue) {
         $deployment = $this->getDeployment();
         for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
             if (is_a($n, 'DOMElement')) {
@@ -124,8 +130,7 @@ class NativeXmlExtendedIssueFilter extends NativeXmlIssueFilter
         }
     }
 
-    public function parseArticle($node, $issue)
-    {
+    public function parseArticle($node, $issue) {
         $filterDao = DAORegistry::getDAO('FilterDAO');
         $importFilters = $filterDao->getObjectsByGroup('native-xml=>extended-article');
         assert(count($importFilters) == 1);
@@ -136,8 +141,7 @@ class NativeXmlExtendedIssueFilter extends NativeXmlIssueFilter
         return $importFilter->execute($articleDoc);
     }
 
-    public function parseIssueGalley($n, $issue)
-    {
+    public function parseIssueGalley($n, $issue) {
         $deployment = $this->getDeployment();
         $importedObjects = parent::parseIssueGalley($n, $issue);
 
@@ -145,9 +149,7 @@ class NativeXmlExtendedIssueFilter extends NativeXmlIssueFilter
         if (is_a($issueGalley, 'IssueGalley')) {
             for ($childNode = $n->firstChild; $childNode !== null; $childNode = $childNode->nextSibling) {
                 if (
-                    is_a($childNode, 'DOMElement')
-                    && $childNode->tagName == 'id'
-                    && $childNode->getAttribute('type') == 'internal'
+                        is_a($childNode, 'DOMElement') && $childNode->tagName == 'id' && $childNode->getAttribute('type') == 'internal'
                 ) {
                     $deployment->setIssueGalleyDBId($childNode->textContent, $issueGalley->getId());
                 }

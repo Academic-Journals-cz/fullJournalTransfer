@@ -150,4 +150,32 @@ class ExtendedIssueNativeXmlFilter extends IssueNativeXmlFilter {
 
         return $customOrderNode;
     }
+    
+    /**
+     * Create and add various date nodes to an issue node.
+     *
+     * @param \DOMDocument $doc
+     * @param \DOMElement $issueNode
+     * @param Issue $issue
+     */
+    public function addDates($doc, $issueNode, $issue)
+    {
+        $deployment = $this->getDeployment();
+
+        if ($issue->getDatePublished()) {
+            $issueNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'date_published', date('c', strtotime($issue->getDatePublished()))));
+        }
+
+        if ($issue->getDateNotified()) {
+            $issueNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'date_notified', date('c', strtotime($issue->getDateNotified()))));
+        }
+
+        if ($issue->getLastModified()) {
+            $issueNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'last_modified', date('c', strtotime($issue->getLastModified()))));
+        }
+
+        if ($issue->getOpenAccessDate()) {
+            $issueNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'open_access_date', date('c', strtotime($issue->getOpenAccessDate()))));
+        }
+    }
 }

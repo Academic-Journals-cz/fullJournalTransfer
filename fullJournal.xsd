@@ -114,10 +114,10 @@
 			<element name="description" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
 			<element ref="pkp:issue_identification" minOccurs="1" maxOccurs="1" />
 			<!-- Metadata -->
-			<element name="date_published" type="date" minOccurs="0" maxOccurs="1" />
-			<element name="date_notified" type="date" minOccurs="0" maxOccurs="1" />
-			<element name="last_modified" type="date" minOccurs="0" maxOccurs="1" />
-			<element name="open_access_date" type="date" minOccurs="0" maxOccurs="1" />
+			<element name="date_published" type="dateTime" minOccurs="0" maxOccurs="1" />
+			<element name="date_notified" type="dateTime" minOccurs="0" maxOccurs="1" />
+			<element name="last_modified" type="dateTime" minOccurs="0" maxOccurs="1" />
+			<element name="open_access_date" type="dateTime" minOccurs="0" maxOccurs="1" />
 			<!-- sub elements -->
 			<element ref="pkp:sections" minOccurs="0" maxOccurs="1" />
 			<element ref="pkp:covers" minOccurs="0" maxOccurs="1" />
