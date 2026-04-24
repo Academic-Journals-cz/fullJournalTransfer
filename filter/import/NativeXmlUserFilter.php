@@ -32,34 +32,6 @@ class NativeXmlUserFilter extends UserXmlPKPUserFilter {
         return static::class;
     }
 
-//    public function parseUser($node) {
-//        $user = parent::parseUser($node);
-//        $deployment = $this->getDeployment();
-//        $context = $deployment->getContext();
-//
-//        $userByEmail = Repo::user()->getByEmail($user->getEmail(), true);
-//
-//        if ($userByEmail) {
-//            echo $user->getUsername() . "\n";
-//            $userGroupDao = DAORegistry::getDAO('UserGroupDAO');
-//            $userGroupsFactory = $userGroupDao->getByContextId($context->getId());
-//            $userGroups = $userGroupsFactory->toArray();
-//
-//            $userGroupNodeList = $node->getElementsByTagNameNS($deployment->getNamespace(), 'user_group_ref');
-//            if ($userGroupNodeList->length > 0) {
-//                for ($i = 0; $i < $userGroupNodeList->length; $i++) {
-//                    $n = $userGroupNodeList->item($i);
-//                    foreach ($userGroups as $userGroup) {
-//                        if (in_array($n->textContent, $userGroup->getName(null))) {
-//                            $userGroupDao->assignUserToGroup($userByEmail->getId(), $userGroup->getId());
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        return $user;
-//    }
-
     public function parseUser($node) {
         $user = parent::parseUser($node);
         $deployment = $this->getDeployment();
@@ -75,7 +47,6 @@ class NativeXmlUserFilter extends UserXmlPKPUserFilter {
 
             $userGroups = is_array($userGroups) ? $userGroups : $userGroups->all();
 
-            // existující skupiny uživatele
             $existingGroupIds = [];
             $existingGroups = Repo::userGroup()
                     ->getCollector()
@@ -108,12 +79,10 @@ class NativeXmlUserFilter extends UserXmlPKPUserFilter {
 
                         $groupId = (int) $userGroup->getId();
 
-                        // už existuje v DB
                         if (isset($existingGroupIds[$groupId])) {
                             continue;
                         }
 
-                        // už přiřazeno v tomto běhu
                         if (isset($assignedInThisRun[$groupId])) {
                             continue;
                         }

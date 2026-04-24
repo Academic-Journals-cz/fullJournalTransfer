@@ -30,7 +30,6 @@ class NativeXmlAnnouncementTypeFilter extends NativeImportFilter
 
     public function getClassName(): string
     {
-//        return 'plugins.importexport.fullJournalTransfer.filter.import.NativeXmlAnnouncementTypeFilter';
         return static::class;
     }
 

@@ -29,7 +29,6 @@ class NativeXmlReviewFormElementFilter extends NativeImportFilter
 
     public function getClassName(): string
     {
-//        return 'plugins.importexport.fullJournalTransfer.filter.import.NativeXmlReviewFormElementFilter';
         return static::class;
     }
 

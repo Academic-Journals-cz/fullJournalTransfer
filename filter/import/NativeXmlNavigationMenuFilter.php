@@ -29,7 +29,6 @@ class NativeXmlNavigationMenuFilter extends NativeImportFilter
 
     public function getClassName(): string
     {
-//        return 'plugins.importexport.fullJournalTransfer.filter.import.NativeXmlNavigationMenuFilter';
         return static::class;
     }
 

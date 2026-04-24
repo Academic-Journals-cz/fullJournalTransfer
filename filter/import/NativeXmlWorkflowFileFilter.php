@@ -45,9 +45,6 @@ class NativeXmlWorkflowFileFilter extends NativeXmlArticleFileFilter {
 
         $errorOccurred = false;
 
-        // --------------------------------------------------
-        // Genre lookup přes Repo
-        // --------------------------------------------------
         $genreId = null;
         $genreName = $node->getAttribute('genre');
 
@@ -81,9 +78,6 @@ class NativeXmlWorkflowFileFilter extends NativeXmlArticleFileFilter {
             }
         }
 
-        // --------------------------------------------------
-        // User lookup přes Repo
-        // --------------------------------------------------
         $uploaderUsername = $node->getAttribute('uploader');
 
         if (!$uploaderUsername) {
@@ -94,9 +88,6 @@ class NativeXmlWorkflowFileFilter extends NativeXmlArticleFileFilter {
 
         $uploaderUserId = $user ? (int) $user->getId() : (int) Application::get()->getRequest()->getUser()->getId();
 
-        // --------------------------------------------------
-        // SubmissionFile objekt
-        // --------------------------------------------------
         $submissionFile = Repo::submissionFile()->newDataObject();
         $submissionFile->setData('submissionId', (int) $submission->getId());
         $submissionFile->setData('locale', $submission->getLocale());
@@ -144,9 +135,6 @@ class NativeXmlWorkflowFileFilter extends NativeXmlArticleFileFilter {
             $submissionFile->setViewable(true);
         }
 
-        // --------------------------------------------------
-        // assoc type / assoc id
-        // --------------------------------------------------
         if ($node->getAttribute('assoc_type')) {
             $reviewRoundFileStages = [SUBMISSION_FILE_REVIEW_FILE, SUBMISSION_FILE_REVIEW_REVISION];
 
@@ -172,9 +160,6 @@ class NativeXmlWorkflowFileFilter extends NativeXmlArticleFileFilter {
             }
         }
 
-        // --------------------------------------------------
-        // Child nodes
-        // --------------------------------------------------
         $allRevisionIds = [];
 
         for ($childNode = $node->firstChild; $childNode !== null; $childNode = $childNode->nextSibling) {
@@ -233,41 +218,6 @@ class NativeXmlWorkflowFileFilter extends NativeXmlArticleFileFilter {
         if ($errorOccurred) {
             return null;
         }
-
-//        $submissionFileId = null;
-//
-//        if (count($allRevisionIds) < 2) {
-//            $submissionFileId = (int) Repo::submissionFile()->add($submissionFile);
-//            $submissionFile = Repo::submissionFile()->get($submissionFileId);
-//        } else {
-//            $currentFileId = $submissionFile->getData('fileId');
-//
-//            $allRevisionIds = array_filter(
-//                    $allRevisionIds,
-//                    fn($fileId) => $fileId !== $currentFileId
-//            );
-//            $allRevisionIds = array_values($allRevisionIds);
-//
-//            foreach ($allRevisionIds as $i => $fileId) {
-//                if ($i === 0) {
-//                    $submissionFile->setData('fileId', $fileId);
-//                    $submissionFileId = (int) Repo::submissionFile()->add($submissionFile);
-//                    $submissionFile = Repo::submissionFile()->get($submissionFileId);
-//                } else {
-//                    $submissionFile = Repo::submissionFile()->edit(
-//                            $submissionFile,
-//                            ['fileId' => $fileId],
-//                            $request
-//                    );
-//                }
-//            }
-//
-//            $submissionFile = Repo::submissionFile()->edit(
-//                    $submissionFile,
-//                    ['fileId' => $currentFileId],
-//                    $request
-//            );
-//        }
 
         $submissionFileDao = app(\PKP\submissionFile\DAO::class);
 
