@@ -14,6 +14,14 @@ use Illuminate\Support\Facades\App;
 
 class NativeXmlExtendedArticleFilter extends NativeXmlArticleFilter {
 
+    /**
+     * Files whose source_submission_file_id could not be resolved at import time.
+     * Key = old submission_file id from XML, value = old source submission_file id from XML.
+     *
+     * @var array<string,string>
+     */
+    private array $pendingSourceSubmissionFileIds = [];
+
     public function getClassName(): string {
         return static::class;
     }
@@ -42,9 +50,18 @@ class NativeXmlExtendedArticleFilter extends NativeXmlArticleFilter {
     public function handleChildElement($node, $submission) {
         if ($node->tagName === 'stage') {
             $this->parseStage($node, $submission);
-        } else {
-            parent::handleChildElement($node, $submission);
+            return;
         }
+
+        // NativeXmlSubmissionFileFilter in OJS 3.4 imports source_submission_file_id
+        // as a raw database id. In full journal transfer XML this value is the old
+        // submission_file id, so it must be mapped before the native filter runs.
+        if ($node->tagName === 'submission_file') {
+            $this->parseSubmissionFile($node);
+            return;
+        }
+
+        parent::handleChildElement($node, $submission);
     }
 
     public function parseStage($node, $submission) {
@@ -421,6 +438,85 @@ class NativeXmlExtendedArticleFilter extends NativeXmlArticleFilter {
         }
 
         return $submissionCommentDAO->insertObject($comment);
+    }
+
+    /**
+     * Import a native <submission_file> node without modifying the core native plugin.
+     *
+     * The native OJS 3.4 submission file import filter expects source_submission_file_id
+     * to be a real DB id. During full journal transfer it is still the OLD XML id.
+     * Therefore we clone the node and either replace the attribute with the mapped id,
+     * or temporarily remove it and resolve it after the referenced file is imported.
+     */
+    public function parseSubmissionFile(DOMElement $node) {
+        $deployment = $this->getDeployment();
+
+        $oldSubmissionFileId = trim((string) $node->getAttribute('id'));
+        $oldSourceSubmissionFileId = trim((string) $node->getAttribute('source_submission_file_id'));
+
+        $submissionFileDoc = new DOMDocument('1.0', 'utf-8');
+        $submissionFileNode = $submissionFileDoc->importNode($node, true);
+        $submissionFileDoc->appendChild($submissionFileNode);
+
+        if ($oldSourceSubmissionFileId !== '') {
+            $mappedSourceSubmissionFileId = $deployment->getSubmissionFileDBId($oldSourceSubmissionFileId);
+
+            if ($mappedSourceSubmissionFileId) {
+                $submissionFileNode->setAttribute(
+                    'source_submission_file_id',
+                    (string) $mappedSourceSubmissionFileId
+                );
+            } else {
+                // Prevent FK violation during insert. The relation is restored later
+                // once both old ids are available in deployment's submission file map.
+                $submissionFileNode->removeAttribute('source_submission_file_id');
+
+                if ($oldSubmissionFileId !== '') {
+                    $this->pendingSourceSubmissionFileIds[$oldSubmissionFileId] = $oldSourceSubmissionFileId;
+                }
+            }
+        }
+
+        $importFilter = $this->getImportFilter('submission_file');
+        $importFilter->setDeployment($deployment);
+
+        $submissionFile = $importFilter->execute($submissionFileDoc);
+
+        $this->resolvePendingSourceSubmissionFileIds();
+
+        return $submissionFile;
+    }
+
+    /**
+     * Resolve source_submission_file_id values that could not be mapped before insert.
+     */
+    private function resolvePendingSourceSubmissionFileIds(): void {
+        if (empty($this->pendingSourceSubmissionFileIds)) {
+            return;
+        }
+
+        $deployment = $this->getDeployment();
+
+        foreach ($this->pendingSourceSubmissionFileIds as $oldSubmissionFileId => $oldSourceSubmissionFileId) {
+            $newSubmissionFileId = $deployment->getSubmissionFileDBId($oldSubmissionFileId);
+            $newSourceSubmissionFileId = $deployment->getSubmissionFileDBId($oldSourceSubmissionFileId);
+
+            if (!$newSubmissionFileId || !$newSourceSubmissionFileId) {
+                continue;
+            }
+
+            $submissionFile = Repo::submissionFile()->get((int) $newSubmissionFileId);
+            if (!$submissionFile) {
+                continue;
+            }
+
+            Repo::submissionFile()->edit(
+                $submissionFile,
+                ['sourceSubmissionFileId' => (int) $newSourceSubmissionFileId]
+            );
+
+            unset($this->pendingSourceSubmissionFileIds[$oldSubmissionFileId]);
+        }
     }
 
     public function parseArticleFile($node) {
