@@ -1,4 +1,4 @@
-**English** | [Português Brasileiro](/docs/README-pt_BR.md)
+**English**
 
 # Full Journal Transfer
 This plugin allows you to import and export all the content of a journal.
@@ -11,6 +11,7 @@ Compatible with OJS 3.4.0. Not fully completed yet.
 - if you want to transfer the articles which are not assigned to any issue (like declined articles or articles in workflow stages), you have to assign them to an dump issue for the transfer. The plugin is transfering only articles which belongs to an issue.
 
 --
+
 The latest release of this plugin is compatible with the following PKP applications:
 
 * OJS 3.3.0
