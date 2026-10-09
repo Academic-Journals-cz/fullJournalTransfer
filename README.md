@@ -230,7 +230,7 @@ Science and Technology (IBICT) for OJS 2.x; version 3.3 was funded by the Federa
 of São Paulo (Unifesp) and the Federal University of Recôncavo da Bahia (UFRB) and developed
 by Lepidus Tecnologia.
 
-The OJS 3.5 version is maintained by academic-journals-cz (Palacký University Olomouc).
+The OJS 3.5 version is maintained by academic-journals-cz.
 
 ## License
 
