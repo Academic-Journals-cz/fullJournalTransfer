@@ -1,22 +1,12 @@
 msgid "plugins.importexport.fullJournal.displayName"
 msgstr "Plugin de Exportação de Revista"
 
-msgid "plugins.importexport.fullJournal.description"
-msgstr "Permite importar e exportar revistas."
-
-msgid "plugins.importexport.fullJournal.cliUsage"
-msgstr ""
-"Uso: {$scriptName} {$pluginName} [comando] ...\n"
-"Comandos:\n"
-"import [targzFileName] [user_name]\n"
-"export [targzFileName] [journal_path]\n"
-
 msgid "plugins.importexport.fullJournalTransfer.attention"
 msgstr "Atenção"
 
 msgid "plugins.importexport.fullJournalTransfer.guiAttentionMessage"
 msgstr "Este plugin deve ser usado apenas por linha de comando. O uso via interface gráfica não é suportado.<br>"
-"Para mais informações, acesse <a target=\"_blank\" rel=\"noopener noreferrer\" href=\"https://github.com/lepidus/fullJournalTransfer#instructions-for-use\">instruções para uso</a>."
+"Para mais informações, acesse <a target=\"_blank\" rel=\"noopener noreferrer\" href=\"https://github.com/academic-journals-cz/fullJournalTransfer#instructions-for-use\">instruções para uso</a>."
 
 msgid "plugins.importexport.fullJournal.exportingJournal"
 msgstr "Exportando revista {$journalName}..."
@@ -63,5 +53,3 @@ msgstr "Importação concluída com sucesso"
 msgid "plugins.importexport.fullJournal.error.userNotFound"
 msgstr "Usuário com email {$email} não está presente no site."
 
-msgid "plugins.importexport.fullJournal.error.metric"
-msgstr "Falha ao importar a métrica. {$reason}"

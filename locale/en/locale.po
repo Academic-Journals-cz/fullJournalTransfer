@@ -1,22 +1,35 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: fullJournalTransfer\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: en\n"
+
 msgid "plugins.importexport.fullJournal.displayName"
-msgstr "Journal Export Plugin"
+msgstr "Full Journal Transfer Plugin"
 
 msgid "plugins.importexport.fullJournal.description"
-msgstr "Allows you to import and export journals."
+msgstr "Exports and imports a whole journal (settings, users, issues, articles with their editorial workflow, activity log and usage statistics) between OJS 3.5 installations. Command line only."
 
 msgid "plugins.importexport.fullJournal.cliUsage"
 msgstr ""
 "Usage: {$scriptName} {$pluginName} [command] ...\n"
 "Commands:\n"
-"import [targzFileName] [user_name]\n"
-"export [targzFileName] [journal_path]\n"
+"  export [archive.tar.gz] [journal_path] [options]\n"
+"  import [archive.tar.gz] [user_name] [options]\n"
+"Options:\n"
+"  --no-metrics        do not export/import the usage statistics\n"
+"  --no-activity-log   do not export/import the activity log (event log, e-mail log) of the submissions\n"
+"  --no-public-files   do not export/import the public files of the journal (logos, favicon, stylesheet, covers)\n"
+"  --journal-path <path>  use this path (URL) for the imported journal instead of the exported one\n"
 
 msgid "plugins.importexport.fullJournalTransfer.attention"
 msgstr "Attention"
 
 msgid "plugins.importexport.fullJournalTransfer.guiAttentionMessage"
-msgstr "This plugin should be used only by command line. The use via the graphical interface is not supported.<br>"
-"For more information, check <a target=\"_blank\" rel=\"noopener noreferrer\" href=\"https://github.com/lepidus/fullJournalTransfer#instructions-for-use\">instructions for use</a>."
+msgstr "This plugin can only be used from the command line. The use via the graphical interface is not supported.<br>"
+"For more information, check the <a target=\"_blank\" rel=\"noopener noreferrer\" href=\"https://github.com/academic-journals-cz/fullJournalTransfer#instructions-for-use\">instructions for use</a>."
 
 msgid "plugins.importexport.fullJournal.exportingJournal"
 msgstr "Exporting journal {$journalName}..."
@@ -30,14 +43,26 @@ msgstr "Exporting sections..."
 msgid "plugins.importexport.fullJournal.exportingIssues"
 msgstr "Exporting issues..."
 
+msgid "plugins.importexport.fullJournal.exportingIssue"
+msgstr "Exporting issue {$issue}..."
+
 msgid "plugins.importexport.fullJournal.exportingArticles"
-msgstr "Exporting articles..."
+msgstr "Exporting articles that are not assigned to an issue..."
 
 msgid "plugins.importexport.fullJournal.exportingMetrics"
-msgstr "Exporting metrics..."
+msgstr "Exporting usage statistics..."
+
+msgid "plugins.importexport.fullJournal.creatingArchive"
+msgstr "Creating the archive..."
 
 msgid "plugins.importexport.fullJournal.exportCompleted"
 msgstr "Export completed successfully"
+
+msgid "plugins.importexport.fullJournal.extractingArchive"
+msgstr "Extracting the archive..."
+
+msgid "plugins.importexport.fullJournal.validatingXml"
+msgstr "Validating the XML document..."
 
 msgid "plugins.importexport.fullJournal.importingJournal"
 msgstr "Importing journal..."
@@ -51,17 +76,59 @@ msgstr "Importing sections..."
 msgid "plugins.importexport.fullJournal.importingIssues"
 msgstr "Importing issues..."
 
+msgid "plugins.importexport.fullJournal.importedIssue"
+msgstr "Imported issue {$issue}"
+
 msgid "plugins.importexport.fullJournal.importingArticles"
-msgstr "Importing articles..."
+msgstr "Importing articles that are not assigned to an issue..."
 
 msgid "plugins.importexport.fullJournal.importingMetrics"
-msgstr "Importing metrics..."
+msgstr "Importing usage statistics..."
+
+msgid "plugins.importexport.fullJournal.importSummary"
+msgstr "Imported objects:"
 
 msgid "plugins.importexport.fullJournal.importCompleted"
 msgstr "Import completed successfully"
 
-msgid "plugins.importexport.fullJournal.error.userNotFound"
-msgstr "User with email {$email} is not present on the site."
+msgid "plugins.importexport.fullJournal.importedJournal"
+msgstr "Journal \"{$journalPath}\" was created with the ID {$journalId} ({$seconds} s)."
 
-msgid "plugins.importexport.fullJournal.error.metric"
-msgstr "Failed to import metric. {$reason}"
+msgid "plugins.importexport.fullJournal.importFailed"
+msgstr "The import failed; all database changes were rolled back."
+
+msgid "plugins.importexport.fullJournal.error.userNotFound"
+msgstr "User with the e-mail {$email} is not present on the site."
+
+msgid "plugins.importexport.fullJournal.error.journalPathExists"
+msgstr "A journal with the path \"{$path}\" already exists on this site."
+
+msgid "plugins.importexport.fullJournal.error.localeNotInstalled"
+msgstr "The primary locale of the journal ({$locale}) is not installed on this site. Install the locale first (Administration > Site Settings > Languages)."
+
+msgid "plugins.importexport.fullJournal.warning.submissionSkipped"
+msgstr "Submission {$submissionId} was skipped: {$reason}."
+
+msgid "plugins.importexport.fullJournal.warning.localesRemoved"
+msgstr "The locales {$locales} were removed from the setting {$setting} because they are not installed on this site."
+
+msgid "plugins.importexport.fullJournal.warning.themeNotInstalled"
+msgstr "The theme \"{$theme}\" is not installed on this site; the default theme was used."
+
+msgid "plugins.importexport.fullJournal.warning.reviewFormNotFound"
+msgstr "The review form {$id} of the source installation was not found among the imported review forms."
+
+msgid "plugins.importexport.fullJournal.warning.reviewFormElementNotFound"
+msgstr "The review form element {$id} of the source installation was not found; the response was skipped."
+
+msgid "plugins.importexport.fullJournal.warning.fileWithoutParent"
+msgstr "The workflow file {$id} has no review round, review assignment or discussion note to attach to and was skipped."
+
+msgid "plugins.importexport.fullJournal.warning.metricsDirMissing"
+msgstr "The usage statistics directory \"{$dir}\" was not found in the archive."
+
+msgid "plugins.importexport.fullJournal.warning.publicFilesMissing"
+msgstr "The public files directory \"{$dir}\" was not found in the archive."
+
+msgid "plugins.importexport.fullJournal.warning.libraryFileMissing"
+msgstr "The publisher library file "{$file}" was not found in the archive."

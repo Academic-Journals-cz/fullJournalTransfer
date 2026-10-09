@@ -1,17 +1,29 @@
 <?php
 
 /**
+ * @file plugins/importexport/fullJournalTransfer/filter/import/NativeXmlAnnouncementTypeFilter.php
+ *
  * Copyright (c) 2014-2024 Lepidus Tecnologia
+ * Copyright (c) 2025-2026 academic-journals-cz
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
+ *
+ * @class NativeXmlAnnouncementTypeFilter
+ *
+ * @brief Imports announcement types.
  */
+
 namespace APP\plugins\importexport\fullJournalTransfer\filter\import;
 
-use PKP\plugins\importexport\native\filter\NativeImportFilter;
-use PKP\services\PKPSchemaService;
+use APP\core\Application;
+use APP\plugins\importexport\fullJournalTransfer\classes\FullJournalFilterTrait;
+use DOMElement;
 use PKP\db\DAORegistry;
+use PKP\plugins\importexport\native\filter\NativeImportFilter;
 
 class NativeXmlAnnouncementTypeFilter extends NativeImportFilter
 {
+    use FullJournalFilterTrait;
+
     public function __construct($filterGroup)
     {
         $this->setDisplayName('Native XML announcement type import');
@@ -33,24 +45,26 @@ class NativeXmlAnnouncementTypeFilter extends NativeImportFilter
         return static::class;
     }
 
+    /**
+     * @param DOMElement $node
+     */
     public function handleElement($node)
     {
-        $deployment = $this->getDeployment();
+        $deployment = $this->getFullJournalDeployment();
         $context = $deployment->getContext();
 
-        $announcementTypeDAO = DAORegistry::getDAO('AnnouncementTypeDAO');
-        $announcementType = $announcementTypeDAO->newDataObject();
+        $announcementTypeDao = DAORegistry::getDAO('AnnouncementTypeDAO'); /** @var \PKP\announcement\AnnouncementTypeDAO $announcementTypeDao */
+        $announcementType = $announcementTypeDao->newDataObject();
+        $announcementType->setContextId((int) $context->getId());
 
-        $announcementType->setAssocType(Application::get()->getContextAssocType());
-        $announcementType->setAssocId($context->getId());
-
-        for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
-            if (is_a($n, 'DOMElement') && $n->tagName == 'name') {
-                $announcementType->setName($n->textContent, $n->getAttribute('locale'));
-            }
+        foreach ($this->childElements($node, 'name') as $nameNode) {
+            [$locale, $value] = $this->parseLocalizedContent($nameNode);
+            $announcementType->setName($value, $locale ?: $context->getPrimaryLocale());
         }
 
-        $announcementTypeId = $announcementTypeDAO->insertObject($announcementType);
+        $announcementTypeDao->insertObject($announcementType);
+        $deployment->incrementCounter('announcement types');
+
         return $announcementType;
     }
 }

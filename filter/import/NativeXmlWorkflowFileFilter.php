@@ -1,193 +1,169 @@
 <?php
 
+/**
+ * @file plugins/importexport/fullJournalTransfer/filter/import/NativeXmlWorkflowFileFilter.php
+ *
+ * Copyright (c) 2014-2021 Simon Fraser University
+ * Copyright (c) 2000-2021 John Willinsky
+ * Copyright (c) 2014-2024 Lepidus Tecnologia
+ * Copyright (c) 2025-2026 academic-journals-cz
+ * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
+ *
+ * @class NativeXmlWorkflowFileFilter
+ *
+ * @brief Imports a workflow file (review file, author revision, reviewer
+ *  attachment, discussion file). The file is attached to the review round,
+ *  review assignment or note that is currently being imported (see the
+ *  deployment). The file is inserted through the DAO: the repository's add()
+ *  would send notifications and write "file uploaded" log entries.
+ */
+
 namespace APP\plugins\importexport\fullJournalTransfer\filter\import;
 
 use APP\core\Application;
-use APP\core\Services;
 use APP\facades\Repo;
+use APP\plugins\importexport\fullJournalTransfer\classes\FullJournalFilterTrait;
 use APP\plugins\importexport\native\filter\NativeXmlArticleFileFilter;
 use DOMElement;
+use PKP\core\Core;
 use PKP\db\DAORegistry;
-use Illuminate\Support\Facades\DB;
+use PKP\submissionFile\SubmissionFile;
 
-class NativeXmlWorkflowFileFilter extends NativeXmlArticleFileFilter {
+class NativeXmlWorkflowFileFilter extends NativeXmlArticleFileFilter
+{
+    use FullJournalFilterTrait;
 
-    /** @var array<int, array<string, object>> */
+    /** @var array<int, array<string, \PKP\submission\Genre>> */
     protected array $genresByContextId = [];
 
-    public function getClassName(): string {
+    public function getClassName(): string
+    {
         return static::class;
     }
 
-    public function getPluralElementName(): string {
+    public function getPluralElementName()
+    {
         return 'workflow_files';
     }
 
-    public function getSingularElementName(): string {
+    public function getSingularElementName()
+    {
         return 'workflow_file';
     }
 
-    public function handleElement($node) {
-        $deployment = $this->getDeployment();
+    /**
+     * @param DOMElement $node
+     *
+     * @return ?SubmissionFile
+     */
+    public function handleElement($node)
+    {
+        $deployment = $this->getFullJournalDeployment();
         $submission = $deployment->getSubmission();
         $context = $deployment->getContext();
-        $reviewRound = $deployment->getReviewRound();
 
         $stageName = $node->getAttribute('stage');
         $stageNameIdMapping = $deployment->getStageNameStageIdMapping();
-        assert(isset($stageNameIdMapping[$stageName]));
-        $stageId = $stageNameIdMapping[$stageName];
+        if (!isset($stageNameIdMapping[$stageName])) {
+            $deployment->addWarning(Application::ASSOC_TYPE_SUBMISSION, $submission->getId(), __('plugins.importexport.native.error.submissionFileInvalidFileStage', ['id' => $node->getAttribute('id')]));
+            return null;
+        }
+        $fileStage = (int) $stageNameIdMapping[$stageName];
 
-        $errorOccurred = false;
-
-        // --------------------------------------------------
-        // Genre lookup
-        // --------------------------------------------------
+        // Genre
         $genreId = null;
-        $genreName = $node->getAttribute('genre');
-
-        if ($genreName) {
-            $contextId = (int) $context->getId();
-
-            if (!isset($this->genresByContextId[$contextId])) {
-                $genreDao = DAORegistry::getDAO('GenreDAO');
-                $genres = $genreDao->getByContextId($contextId);
-
-                $this->genresByContextId[$contextId] = [];
-
-                while ($genre = $genres->next()) {
-                    $names = $genre->getName(null) ?? [];
-                    foreach ($names as $name) {
-                        $this->genresByContextId[$contextId][$name] = $genre;
-                    }
-                }
+        if ($genreName = $node->getAttribute('genre')) {
+            $genre = $this->findGenre((int) $context->getId(), $genreName);
+            if (!$genre) {
+                $deployment->addError(Application::ASSOC_TYPE_SUBMISSION_FILE, $submission->getId(), __('plugins.importexport.common.error.unknownGenre', ['param' => $genreName]));
+                return null;
             }
-
-            if (!isset($this->genresByContextId[$contextId][$genreName])) {
-                $deployment->addError(
-                        ASSOC_TYPE_SUBMISSION,
-                        $submission->getId(),
-                        __('plugins.importexport.common.error.unknownGenre', ['param' => $genreName])
-                );
-                $errorOccurred = true;
-            } else {
-                $genre = $this->genresByContextId[$contextId][$genreName];
-                $genreId = (int) $genre->getId();
-            }
+            $genreId = (int) $genre->getId();
         }
 
-        // --------------------------------------------------
-        // User lookup
-        // --------------------------------------------------
+        // Uploader
         $uploaderUsername = $node->getAttribute('uploader');
-
-        if (!$uploaderUsername) {
-            $user = $deployment->getUser();
-        } else {
-            $user = Repo::user()->getByUsername($uploaderUsername, true);
+        $uploaderUsername = $deployment->getMappedUsername($uploaderUsername) ?? $uploaderUsername;
+        $uploader = $uploaderUsername ? Repo::user()->getByUsername($uploaderUsername, true) : null;
+        if (!$uploader) {
+            $uploader = $deployment->getUser();
         }
 
-        $uploaderUserId = $user ? (int) $user->getId() : null;
-
-        // --------------------------------------------------
-        // SubmissionFile object
-        // --------------------------------------------------
-        $submissionFile = Repo::submissionFile()->newDataObject();
+        $submissionFile = Repo::submissionFile()->dao->newDataObject();
         $submissionFile->setData('submissionId', (int) $submission->getId());
-        $submissionFile->setData('locale', $submission->getLocale());
-        $submissionFile->setData('fileStage', (int) $stageId);
-        $submissionFile->setData('createdAt', \Core::getCurrentDate());
-        $submissionFile->setData('updatedAt', \Core::getCurrentDate());
+        $submissionFile->setData('locale', $submission->getData('locale'));
+        $submissionFile->setData('fileStage', $fileStage);
+        $submissionFile->setData('createdAt', Core::getCurrentDate());
+        $submissionFile->setData('updatedAt', Core::getCurrentDate());
+        $submissionFile->setData('dateCreated', $node->getAttribute('date_created') ?: null);
+        $submissionFile->setData('language', $node->getAttribute('language') ?: null);
+        $submissionFile->setData('uploaderUserId', $uploader ? (int) $uploader->getId() : null);
+        $submissionFile->setData('viewable', $node->getAttribute('viewable') === 'true');
 
-        if ($dateCreated = $node->getAttribute('date_created')) {
-            $submissionFile->setData('dateCreated', $dateCreated);
+        foreach ([
+            'caption' => 'caption',
+            'copyright_owner' => 'copyrightOwner',
+            'credit' => 'credit',
+            'sales_type' => 'salesType',
+            'terms' => 'terms',
+        ] as $attribute => $prop) {
+            if (($value = $node->getAttribute($attribute)) !== '') {
+                $submissionFile->setData($prop, $value);
+            }
         }
-
-        if ($language = $node->getAttribute('language')) {
-            $submissionFile->setData('language', $language);
-        }
-
-        if ($caption = $node->getAttribute('caption')) {
-            $submissionFile->setData('caption', $caption);
-        }
-
-        if ($copyrightOwner = $node->getAttribute('copyright_owner')) {
-            $submissionFile->setData('copyrightOwner', $copyrightOwner);
-        }
-
-        if ($credit = $node->getAttribute('credit')) {
-            $submissionFile->setData('credit', $credit);
-        }
-
         if (strlen($directSalesPrice = $node->getAttribute('direct_sales_price'))) {
             $submissionFile->setData('directSalesPrice', $directSalesPrice);
         }
-
         if ($genreId) {
             $submissionFile->setData('genreId', $genreId);
         }
-
-        if ($salesType = $node->getAttribute('sales_type')) {
-            $submissionFile->setData('salesType', $salesType);
+        if (($oldSourceSubmissionFileId = $node->getAttribute('source_submission_file_id')) !== '') {
+            $submissionFile->setData('sourceSubmissionFileId', $deployment->getSubmissionFileDBId($oldSourceSubmissionFileId));
         }
 
-        if ($sourceSubmissionFileId = $node->getAttribute('source_submission_file_id')) {
-            $mappedSourceSubmissionFileId = $deployment->getSubmissionFileDBId($sourceSubmissionFileId);
-            $submissionFile->setData('sourceSubmissionFileId', $mappedSourceSubmissionFileId ?: null);
-        }
-
-        if ($terms = $node->getAttribute('terms')) {
-            $submissionFile->setData('terms', $terms);
-        }
-
-        if ($uploaderUserId) {
-            $submissionFile->setData('uploaderUserId', $uploaderUserId);
-        }
-
-        if ($node->getAttribute('viewable') === 'true') {
-            $submissionFile->setViewable(true);
-        }
-
-        // --------------------------------------------------
-        // assoc type / assoc id
-        // --------------------------------------------------
-        if ($node->getAttribute('assoc_type')) {
-            $reviewRoundFileStages = [SUBMISSION_FILE_REVIEW_FILE, SUBMISSION_FILE_REVIEW_REVISION];
-
-            if (in_array($submissionFile->getData('fileStage'), $reviewRoundFileStages, true) && $reviewRound) {
-                $submissionFile->setData('assocType', ASSOC_TYPE_REVIEW_ROUND);
-                $submissionFile->setData('assocId', (int) $reviewRound->getId());
+        // Association with the review round / review assignment / discussion note
+        $assocType = (int) $node->getAttribute('assoc_type');
+        if (in_array($fileStage, [
+            SubmissionFile::SUBMISSION_FILE_REVIEW_FILE,
+            SubmissionFile::SUBMISSION_FILE_REVIEW_REVISION,
+            SubmissionFile::SUBMISSION_FILE_INTERNAL_REVIEW_FILE,
+            SubmissionFile::SUBMISSION_FILE_INTERNAL_REVIEW_REVISION,
+        ])) {
+            $reviewRound = $deployment->getReviewRound();
+            if (!$reviewRound) {
+                $deployment->addWarning(Application::ASSOC_TYPE_SUBMISSION, $submission->getId(), __('plugins.importexport.fullJournal.warning.fileWithoutParent', ['id' => $node->getAttribute('id')]));
+                return null;
             }
-
-            if ($submissionFile->getData('fileStage') == SUBMISSION_FILE_REVIEW_ATTACHMENT) {
-                $reviewAssignment = $deployment->getReviewAssignment();
-                if ($reviewAssignment) {
-                    $submissionFile->setData('assocType', ASSOC_TYPE_REVIEW_ASSIGNMENT);
-                    $submissionFile->setData('assocId', (int) $reviewAssignment->getId());
-                }
+            $submissionFile->setData('assocType', Application::ASSOC_TYPE_REVIEW_ROUND);
+            $submissionFile->setData('assocId', (int) $reviewRound->getId());
+        } elseif ($fileStage === SubmissionFile::SUBMISSION_FILE_REVIEW_ATTACHMENT) {
+            $reviewAssignment = $deployment->getReviewAssignment();
+            if (!$reviewAssignment) {
+                $deployment->addWarning(Application::ASSOC_TYPE_SUBMISSION, $submission->getId(), __('plugins.importexport.fullJournal.warning.fileWithoutParent', ['id' => $node->getAttribute('id')]));
+                return null;
             }
-
-            if ($submissionFile->getData('fileStage') == SUBMISSION_FILE_QUERY) {
-                $note = $deployment->getNote();
-                if ($note) {
-                    $submissionFile->setData('assocType', ASSOC_TYPE_NOTE);
-                    $submissionFile->setData('assocId', (int) $note->getId());
-                }
+            $submissionFile->setData('assocType', Application::ASSOC_TYPE_REVIEW_ASSIGNMENT);
+            $submissionFile->setData('assocId', (int) $reviewAssignment->getId());
+        } elseif ($fileStage === SubmissionFile::SUBMISSION_FILE_QUERY) {
+            $note = $deployment->getNote();
+            if (!$note) {
+                $deployment->addWarning(Application::ASSOC_TYPE_SUBMISSION, $submission->getId(), __('plugins.importexport.fullJournal.warning.fileWithoutParent', ['id' => $node->getAttribute('id')]));
+                return null;
             }
+            $submissionFile->setData('assocType', Application::ASSOC_TYPE_NOTE);
+            $submissionFile->setData('assocId', (int) $note->id);
+        } elseif ($assocType === Application::ASSOC_TYPE_SUBMISSION_FILE) {
+            // dependent file; resolved below from submission_file_ref
         }
 
-        // --------------------------------------------------
         // Child nodes
-        // --------------------------------------------------
         $fileIds = [];
         $currentFileId = null;
-
-        for ($childNode = $node->firstChild; $childNode !== null; $childNode = $childNode->nextSibling) {
-            if (!($childNode instanceof DOMElement)) {
-                continue;
-            }
-
+        foreach ($this->childElements($node) as $childNode) {
             switch ($childNode->tagName) {
+                case 'id':
+                    $this->parseIdentifier($childNode, $submissionFile);
+                    break;
                 case 'creator':
                 case 'description':
                 case 'name':
@@ -196,91 +172,73 @@ class NativeXmlWorkflowFileFilter extends NativeXmlArticleFileFilter {
                 case 'sponsor':
                 case 'subject':
                     [$locale, $value] = $this->parseLocalizedContent($childNode);
-                    $submissionFile->setData($childNode->tagName, $value, $locale);
+                    $submissionFile->setData($childNode->tagName, $value, $locale ?: $submission->getData('locale'));
                     break;
-
                 case 'submission_file_ref':
-                    if ($submissionFile->getData('fileStage') == SUBMISSION_FILE_DEPENDENT) {
-                        $oldAssocId = $childNode->getAttribute('id');
-                        $newAssocId = $deployment->getSubmissionFileDBId($oldAssocId);
+                    if ($fileStage === SubmissionFile::SUBMISSION_FILE_DEPENDENT) {
+                        $newAssocId = $deployment->getSubmissionFileDBId($childNode->getAttribute('id'));
                         if ($newAssocId) {
-                            $submissionFile->setData('assocType', ASSOC_TYPE_SUBMISSION_FILE);
+                            $submissionFile->setData('assocType', Application::ASSOC_TYPE_SUBMISSION_FILE);
                             $submissionFile->setData('assocId', $newAssocId);
                         }
                     }
                     break;
-
                 case 'file':
                     $fileId = $deployment->getFileDBId($childNode->getAttribute('id')) ?: $this->handleRevisionElement($childNode);
-
                     if (!$fileId) {
                         break;
                     }
-
                     if ($childNode->getAttribute('id') == $node->getAttribute('file_id')) {
                         $currentFileId = $fileId;
                     } else {
                         $fileIds[] = $fileId;
                     }
                     break;
-
                 default:
-                    $deployment->addWarning(
-                            ASSOC_TYPE_SUBMISSION,
-                            $submission->getId(),
-                            __('plugins.importexport.common.error.unknownElement', ['param' => $childNode->tagName])
-                    );
+                    $deployment->addWarning(Application::ASSOC_TYPE_SUBMISSION, $submission->getId(), __('plugins.importexport.common.error.unknownElement', ['param' => $childNode->tagName]));
             }
         }
 
-        if ($errorOccurred || !$currentFileId) {
+        if (!$currentFileId) {
+            $deployment->addWarning(Application::ASSOC_TYPE_SUBMISSION, $submission->getId(), __('plugins.importexport.native.error.submissionFileWithoutRevision', ['id' => $node->getAttribute('id')]));
             return null;
         }
 
-        // current file revision musí být poslední
+        // The current revision must be the last one
         $fileIds[] = $currentFileId;
 
-        $submissionFileDao = app(\PKP\submissionFile\DAO::class);
+        $submissionFileDao = Repo::submissionFile()->dao;
 
-        // první revize -> insert
+        // First revision: insert (this also links the file to the review round)
         $submissionFile->setData('fileId', array_shift($fileIds));
         $submissionFileId = (int) $submissionFileDao->insert($submissionFile);
         $submissionFile = Repo::submissionFile()->get($submissionFileId);
 
-        // další revize -> update stejného submission_file
+        // Further revisions: update the same submission file
         foreach ($fileIds as $fileId) {
             $submissionFile->setData('fileId', $fileId);
             $submissionFileDao->update($submissionFile);
-            $submissionFile = Repo::submissionFile()->get($submissionFileId);
         }
+        $submissionFile = Repo::submissionFile()->get($submissionFileId);
 
-        // --------------------------------------------------
-        // review_round_files
-        // --------------------------------------------------
-        $reviewFileStages = [
-            SUBMISSION_FILE_REVIEW_FILE,
-            SUBMISSION_FILE_REVIEW_REVISION,
-            SUBMISSION_FILE_REVIEW_ATTACHMENT,
-        ];
+        $deployment->setSubmissionFileDBId($node->getAttribute('id'), $submissionFileId);
+        $deployment->incrementCounter('workflow files');
 
-        if (in_array($submissionFile->getData('fileStage'), $reviewFileStages, true) && $reviewRound) {
-            DB::table('review_round_files')->updateOrInsert(
-                    [
-                        'submission_file_id' => (int) $submissionFileId,
-                        'review_round_id' => (int) $reviewRound->getId(),
-                    ],
-                    [
-                        'submission_id' => (int) $submission->getId(),
-                        'stage_id' => (int) $reviewRound->getStageId(),
-                    ]
-            );
+        return $submissionFile;
+    }
+
+    protected function findGenre(int $contextId, string $genreName): ?\PKP\submission\Genre
+    {
+        if (!isset($this->genresByContextId[$contextId])) {
+            $genreDao = DAORegistry::getDAO('GenreDAO'); /** @var \PKP\submission\GenreDAO $genreDao */
+            $genres = $genreDao->getByContextId($contextId);
+            $this->genresByContextId[$contextId] = [];
+            while ($genre = $genres->next()) {
+                foreach ((array) $genre->getName(null) as $name) {
+                    $this->genresByContextId[$contextId][$name] = $genre;
+                }
+            }
         }
-
-        $deployment->setSubmissionFileDBId(
-                $node->getAttribute('id'),
-                $submissionFileId
-        );
-
-        return Repo::submissionFile()->get($submissionFileId);
+        return $this->genresByContextId[$contextId][$genreName] ?? null;
     }
 }

@@ -1,15 +1,24 @@
 <?php
 
 /**
+ * @file plugins/importexport/fullJournalTransfer/filter/export/NavigationMenuNativeXmlFilter.php
+ *
  * Copyright (c) 2014-2024 Lepidus Tecnologia
+ * Copyright (c) 2025-2026 academic-journals-cz
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
+ *
+ * @class NavigationMenuNativeXmlFilter
+ *
+ * @brief Converts navigation menus (with their item assignments) to native XML.
  */
+
 namespace APP\plugins\importexport\fullJournalTransfer\filter\export;
 
-use PKP\plugins\importexport\native\filter\NativeExportFilter;
 use DOMDocument;
 use DOMElement;
 use PKP\db\DAORegistry;
+use PKP\navigationMenu\NavigationMenu;
+use PKP\plugins\importexport\native\filter\NativeExportFilter;
 
 class NavigationMenuNativeXmlFilter extends NativeExportFilter
 {
@@ -24,6 +33,9 @@ class NavigationMenuNativeXmlFilter extends NativeExportFilter
         return static::class;
     }
 
+    /**
+     * @param NavigationMenu[] $navigationMenus
+     */
     public function &process(&$navigationMenus)
     {
         $doc = new DOMDocument('1.0', 'utf-8');
@@ -42,42 +54,38 @@ class NavigationMenuNativeXmlFilter extends NativeExportFilter
         return $doc;
     }
 
-    public function createNavigationMenuNode($doc, $navigationMenu)
+    public function createNavigationMenuNode(DOMDocument $doc, NavigationMenu $navigationMenu): DOMElement
     {
         $deployment = $this->getDeployment();
 
-        $navigationMenuNode = $doc->createElementNS($deployment->getNamespace(), 'navigation_menu');
-        $navigationMenuNode->appendChild($node = $doc->createElementNS(
-            $deployment->getNamespace(),
-            'title',
-            htmlspecialchars($navigationMenu->getTitle(), ENT_COMPAT, 'UTF-8')
-        ));
-        $navigationMenuNode->appendChild($node = $doc->createElementNS(
-            $deployment->getNamespace(),
-            'area_name',
-            htmlspecialchars($navigationMenu->getAreaName(), ENT_COMPAT, 'UTF-8')
-        ));
+        $node = $doc->createElementNS($deployment->getNamespace(), 'navigation_menu');
+        $node->appendChild($doc->createElementNS($deployment->getNamespace(), 'title', htmlspecialchars((string) $navigationMenu->getTitle(), ENT_COMPAT, 'UTF-8')));
+        $node->appendChild($doc->createElementNS($deployment->getNamespace(), 'area_name', htmlspecialchars((string) $navigationMenu->getAreaName(), ENT_COMPAT, 'UTF-8')));
 
-        $this->addNavigationMenuAssignments($doc, $navigationMenuNode, $navigationMenu);
+        $this->addNavigationMenuAssignments($doc, $node, $navigationMenu);
 
-        return $navigationMenuNode;
+        return $node;
     }
 
-    public function addNavigationMenuAssignments($doc, $navigationMenuNode, $navigationMenu)
+    public function addNavigationMenuAssignments(DOMDocument $doc, DOMElement $navigationMenuNode, NavigationMenu $navigationMenu): void
     {
         $deployment = $this->getDeployment();
 
-        $navigationMenuItemAssignmentDAO = DAORegistry::getDAO('NavigationMenuItemAssignmentDAO');
-        $assignments = $navigationMenuItemAssignmentDAO->getByMenuId($navigationMenu->getId())->toArray();
+        $assignmentDao = DAORegistry::getDAO('NavigationMenuItemAssignmentDAO'); /** @var \PKP\navigationMenu\NavigationMenuItemAssignmentDAO $assignmentDao */
+        $assignments = $assignmentDao->getByMenuId((int) $navigationMenu->getId())->toArray();
 
         foreach ($assignments as $assignment) {
-            $navigationMenuNode->appendChild($node = $doc->createElementNS(
-                $deployment->getNamespace(),
-                'navigation_menu_item_assignment'
-            ));
-            $node->setAttribute('menu_item_id', $assignment->getMenuItemId());
-            $node->setAttribute('parent_id', $assignment->getParentId());
-            $node->setAttribute('seq', $assignment->getSequence());
+            $node = $doc->createElementNS($deployment->getNamespace(), 'navigation_menu_item_assignment');
+            $node->setAttribute('menu_item_id', (string) $assignment->getMenuItemId());
+            if ($assignment->getParentId()) {
+                $node->setAttribute('parent_id', (string) $assignment->getParentId());
+            }
+            $node->setAttribute('seq', (string) (int) $assignment->getSequence());
+            $title = $assignment->getTitle(null);
+            if (is_array($title)) {
+                $this->createLocalizedNodes($doc, $node, 'title', $title);
+            }
+            $navigationMenuNode->appendChild($node);
         }
     }
 }

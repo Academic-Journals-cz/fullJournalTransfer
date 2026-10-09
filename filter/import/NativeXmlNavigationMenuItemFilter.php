@@ -1,16 +1,28 @@
 <?php
 
 /**
+ * @file plugins/importexport/fullJournalTransfer/filter/import/NativeXmlNavigationMenuItemFilter.php
+ *
  * Copyright (c) 2014-2024 Lepidus Tecnologia
+ * Copyright (c) 2025-2026 academic-journals-cz
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
+ *
+ * @class NativeXmlNavigationMenuItemFilter
+ *
+ * @brief Imports navigation menu items.
  */
+
 namespace APP\plugins\importexport\fullJournalTransfer\filter\import;
 
-use PKP\plugins\importexport\native\filter\NativeImportFilter;
+use APP\plugins\importexport\fullJournalTransfer\classes\FullJournalFilterTrait;
+use DOMElement;
 use PKP\db\DAORegistry;
+use PKP\plugins\importexport\native\filter\NativeImportFilter;
 
 class NativeXmlNavigationMenuItemFilter extends NativeImportFilter
 {
+    use FullJournalFilterTrait;
+
     public function __construct($filterGroup)
     {
         $this->setDisplayName('Native XML navigation menu item import');
@@ -32,36 +44,42 @@ class NativeXmlNavigationMenuItemFilter extends NativeImportFilter
         return static::class;
     }
 
+    /**
+     * @param DOMElement $node
+     */
     public function handleElement($node)
     {
-        $deployment = $this->getDeployment();
+        $deployment = $this->getFullJournalDeployment();
         $context = $deployment->getContext();
 
-        $navigationMenuItemDAO = DAORegistry::getDAO('NavigationMenuItemDAO');
-        $navigationMenuItem = $navigationMenuItemDAO->newDataObject();
-        $navigationMenuItem->setContextId($context->getId());
-        $navigationMenuItem->setType($node->getAttribute('type'));
-        $navigationMenuItem->setPath($node->getAttribute('path'));
-        $navigationMenuItem->setTitleLocaleKey($node->getAttribute('title_locale_key'));
+        $navigationMenuItemDao = DAORegistry::getDAO('NavigationMenuItemDAO'); /** @var \PKP\navigationMenu\NavigationMenuItemDAO $navigationMenuItemDao */
+        $navigationMenuItem = $navigationMenuItemDao->newDataObject();
+        $navigationMenuItem->setContextId((int) $context->getId());
+        $navigationMenuItem->setType((string) $node->getAttribute('type'));
+        $navigationMenuItem->setPath($node->getAttribute('path') !== '' ? $node->getAttribute('path') : null);
+        if ($node->getAttribute('title_locale_key') !== '') {
+            $navigationMenuItem->setTitleLocaleKey($node->getAttribute('title_locale_key'));
+        }
 
-        $tagMethodMapping = [
-            'title' => 'setTitle',
-            'content' => 'setContent',
-            'remote_url' => 'setRemoteUrl',
-        ];
-
-        for ($childNode = $node->firstChild; $childNode !== null; $childNode = $childNode->nextSibling) {
-            if (is_a($childNode, 'DOMElement')) {
-                $tagName = $childNode->tagName;
-                if (array_key_exists($tagName, $tagMethodMapping)) {
-                    $method = $tagMethodMapping[$tagName];
-                    $navigationMenuItem->$method($childNode->textContent, $childNode->getAttribute('locale'));
-                }
+        foreach ($this->childElements($node) as $childNode) {
+            [$locale, $value] = $this->parseLocalizedContent($childNode);
+            $locale = $locale ?: $context->getPrimaryLocale();
+            switch ($childNode->tagName) {
+                case 'title':
+                    $navigationMenuItem->setTitle($value, $locale);
+                    break;
+                case 'content':
+                    $navigationMenuItem->setContent($value, $locale);
+                    break;
+                case 'remote_url':
+                    $navigationMenuItem->setRemoteUrl($value, $locale);
+                    break;
             }
         }
 
-        $navigationMenuItemId = $navigationMenuItemDAO->insertObject($navigationMenuItem);
-        $deployment->setNavigationMenuItemDBId($node->getAttribute('id'), $navigationMenuItem->getId());
+        $navigationMenuItemDao->insertObject($navigationMenuItem);
+        $deployment->setNavigationMenuItemDBId($node->getAttribute('id'), (int) $navigationMenuItem->getId());
+        $deployment->incrementCounter('navigation menu items');
 
         return $navigationMenuItem;
     }

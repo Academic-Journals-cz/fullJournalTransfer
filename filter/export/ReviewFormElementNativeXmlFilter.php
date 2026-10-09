@@ -1,14 +1,23 @@
 <?php
 
 /**
- * Copyright (c) 2019-2023 Lepidus Tecnologia
+ * @file plugins/importexport/fullJournalTransfer/filter/export/ReviewFormElementNativeXmlFilter.php
+ *
+ * Copyright (c) 2019-2024 Lepidus Tecnologia
+ * Copyright (c) 2025-2026 academic-journals-cz
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
+ *
+ * @class ReviewFormElementNativeXmlFilter
+ *
+ * @brief Converts review form elements to native XML.
  */
+
 namespace APP\plugins\importexport\fullJournalTransfer\filter\export;
 
-use PKP\plugins\importexport\native\filter\NativeExportFilter;
 use DOMDocument;
 use DOMElement;
+use PKP\plugins\importexport\native\filter\NativeExportFilter;
+use PKP\reviewForm\ReviewFormElement;
 
 class ReviewFormElementNativeXmlFilter extends NativeExportFilter
 {
@@ -18,11 +27,14 @@ class ReviewFormElementNativeXmlFilter extends NativeExportFilter
         parent::__construct($filterGroup);
     }
 
-    public function getClassName(): string  
+    public function getClassName(): string
     {
         return static::class;
     }
 
+    /**
+     * @param ReviewFormElement[] $reviewFormElements
+     */
     public function &process(&$reviewFormElements)
     {
         $doc = new DOMDocument('1.0', 'utf-8');
@@ -41,54 +53,39 @@ class ReviewFormElementNativeXmlFilter extends NativeExportFilter
         return $doc;
     }
 
-    public function createReviewFormElementNode($doc, $reviewFormElement)
+    public function createReviewFormElementNode(DOMDocument $doc, ReviewFormElement $reviewFormElement): DOMElement
     {
         $deployment = $this->getDeployment();
 
-        $reviewFormElementNode = $doc->createElementNS($deployment->getNamespace(), 'review_form_element');
-        $reviewFormElementNode->setAttribute('id', $reviewFormElement->getId());
-        $reviewFormElementNode->setAttribute('seq', $reviewFormElement->getSequence());
-        $reviewFormElementNode->setAttribute('element_type', $reviewFormElement->getElementType());
-        $reviewFormElementNode->setAttribute('required', $reviewFormElement->getRequired());
-        $reviewFormElementNode->setAttribute('included', $reviewFormElement->getIncluded());
+        $node = $doc->createElementNS($deployment->getNamespace(), 'review_form_element');
+        $node->setAttribute('id', (string) $reviewFormElement->getId());
+        $node->setAttribute('seq', (string) (int) $reviewFormElement->getSequence());
+        $node->setAttribute('element_type', (string) (int) $reviewFormElement->getElementType());
+        $node->setAttribute('required', $reviewFormElement->getRequired() ? '1' : '0');
+        $node->setAttribute('included', $reviewFormElement->getIncluded() ? '1' : '0');
 
-        $this->createLocalizedNodes(
-            $doc,
-            $reviewFormElementNode,
-            'question',
-            $reviewFormElement->getQuestion(null)
-        );
-        $this->createLocalizedNodes(
-            $doc,
-            $reviewFormElementNode,
-            'description',
-            $reviewFormElement->getDescription(null)
-        );
-        if ($reviewFormElement->getPossibleResponses(null)) {
-            $this->addPossibleResponsesNode(
-                $doc,
-                $reviewFormElementNode,
-                $reviewFormElement->getPossibleResponses(null)
-            );
-        }
+        $this->createLocalizedNodes($doc, $node, 'question', $reviewFormElement->getQuestion(null));
+        $this->createLocalizedNodes($doc, $node, 'description', $reviewFormElement->getDescription(null));
 
-        return $reviewFormElementNode;
-    }
-
-    public function addPossibleResponsesNode($doc, $reviewFormElementNode, $possibleResponses)
-    {
-        $deployment = $this->getDeployment();
-
-        foreach ($possibleResponses as $locale => $values) {
-            $reviewFormElementNode->appendChild($node = $doc->createElementNS($deployment->getNamespace(), 'possible_responses'));
-            $node->setAttribute('locale', $locale);
-            foreach ($values as $possibleResponse) {
-                $node->appendChild($childNode = $doc->createElementNS(
-                    $deployment->getNamespace(),
-                    'possible_response',
-                    htmlspecialchars($possibleResponse, ENT_COMPAT, 'UTF-8')
-                ));
+        $possibleResponses = $reviewFormElement->getPossibleResponses(null);
+        if (is_array($possibleResponses)) {
+            foreach ($possibleResponses as $locale => $values) {
+                if (!is_array($values) || empty($values)) {
+                    continue;
+                }
+                $responsesNode = $doc->createElementNS($deployment->getNamespace(), 'possible_responses');
+                $responsesNode->setAttribute('locale', $locale);
+                foreach ($values as $possibleResponse) {
+                    $responsesNode->appendChild($doc->createElementNS(
+                        $deployment->getNamespace(),
+                        'possible_response',
+                        htmlspecialchars((string) $possibleResponse, ENT_COMPAT, 'UTF-8')
+                    ));
+                }
+                $node->appendChild($responsesNode);
             }
         }
+
+        return $node;
     }
 }

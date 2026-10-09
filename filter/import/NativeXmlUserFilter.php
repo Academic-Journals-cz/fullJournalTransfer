@@ -1,145 +1,158 @@
 <?php
 
 /**
- * @file plugins/importexport/fullJournalTransfer/filter/import/NativeXmlUserFilter.inc.php
+ * @file plugins/importexport/fullJournalTransfer/filter/import/NativeXmlUserFilter.php
  *
  * Copyright (c) 2014-2021 Simon Fraser University
  * Copyright (c) 2000-2021 John Willinsky
  * Copyright (c) 2014-2024 Lepidus Tecnologia
+ * Copyright (c) 2025-2026 academic-journals-cz
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class NativeXmlUserFilter
- * @ingroup plugins_importexport_fullJournalTransfer
  *
- * @brief Class that converts a Native XML document to an user.
+ * @brief User import for the journal transfer.
+ *
+ *  Users are identified by their e-mail address: a user that already exists on
+ *  the target site (same e-mail) is reused and only gets the roles of the
+ *  journal; a new user whose username is already taken gets a new username.
+ *  The native users filter only handles the case "username and e-mail both
+ *  match the same user", everything else is rejected, hence this wrapper.
  */
 
 namespace APP\plugins\importexport\fullJournalTransfer\filter\import;
 
-use PKP\plugins\importexport\users\filter\UserXmlPKPUserFilter;
-use PKP\db\DAORegistry;
 use APP\facades\Repo;
-use PKP\user\User;
+use APP\plugins\importexport\fullJournalTransfer\classes\FullJournalFilterTrait;
+use APP\plugins\importexport\fullJournalTransfer\classes\UserImportExportDeployment;
+use DOMElement;
+use PKP\config\Config;
+use PKP\plugins\importexport\users\filter\UserXmlPKPUserFilter;
 
-class NativeXmlUserFilter extends UserXmlPKPUserFilter {
+class NativeXmlUserFilter extends UserXmlPKPUserFilter
+{
+    use FullJournalFilterTrait;
 
-    public function __construct($filterGroup) {
+    /** @var bool whether the username of the user being imported differs from the exported one */
+    private bool $usernameChanged = false;
+
+    /** @var int number of users processed so far (progress output) */
+    private int $importedCount = 0;
+
+    public function __construct($filterGroup)
+    {
         $this->setDisplayName('Native XML user import');
         parent::__construct($filterGroup);
     }
 
-    public function getClassName(): string {
+    public function getClassName(): string
+    {
         return static::class;
     }
 
-    public function parseUser($node) {
-        $user = parent::parseUser($node);
+    /**
+     * @copydoc UserXmlPKPUserFilter::parseUser()
+     */
+    public function parseUser($node)
+    {
         $deployment = $this->getDeployment();
-        $context = $deployment->getContext();
+        $usernameNode = $this->firstChildElement($node, 'username');
+        $emailNode = $this->firstChildElement($node, 'email');
+        $username = $usernameNode ? trim($usernameNode->textContent) : '';
+        $email = $emailNode ? trim($emailNode->textContent) : '';
 
-        $userByEmail = Repo::user()->getByEmail($user->getEmail(), true);
+        if ($email === '') {
+            $this->addError('User "' . $username . '" has no e-mail address and was skipped.');
+            return null;
+        }
 
-        if ($userByEmail) {
-            $userGroups = Repo::userGroup()
-                    ->getCollector()
-                    ->filterByContextIds([(int) $context->getId()])
-                    ->getMany();
-
-            $userGroups = is_array($userGroups) ? $userGroups : $userGroups->all();
-
-            $existingGroupIds = [];
-            $existingGroups = Repo::userGroup()
-                    ->getCollector()
-                    ->filterByUserIds([(int) $userByEmail->getId()])
-                    ->filterByContextIds([(int) $context->getId()])
-                    ->getMany();
-
-            foreach ($existingGroups as $existingGroup) {
-                $existingGroupIds[(int) $existingGroup->getId()] = true;
+        $existingUser = Repo::user()->getByEmail($email, true);
+        if ($existingUser) {
+            // Reuse the existing account: the native filter requires the username to match
+            if ($usernameNode && $existingUser->getUsername() !== $username) {
+                $usernameNode->textContent = $existingUser->getUsername();
             }
-
-            $assignedInThisRun = [];
-
-            $userGroupNodeList = $node->getElementsByTagNameNS(
-                    $deployment->getNamespace(),
-                    'user_group_ref'
-            );
-
-            if ($userGroupNodeList->length > 0) {
-                for ($i = 0; $i < $userGroupNodeList->length; $i++) {
-                    $n = $userGroupNodeList->item($i);
-                    $groupRef = trim((string) $n->textContent);
-
-                    foreach ($userGroups as $userGroup) {
-                        $groupNames = $userGroup->getName(null) ?? [];
-
-                        if (!in_array($groupRef, $groupNames, true)) {
-                            continue;
-                        }
-
-                        $groupId = (int) $userGroup->getId();
-
-                        if (isset($existingGroupIds[$groupId])) {
-                            continue;
-                        }
-
-                        if (isset($assignedInThisRun[$groupId])) {
-                            continue;
-                        }
-
-                        Repo::userGroup()->assignUserToGroup(
-                                (int) $userByEmail->getId(),
-                                $groupId
-                        );
-
-                        $assignedInThisRun[$groupId] = true;
-                        $existingGroupIds[$groupId] = true;
-                    }
-                }
+        } else {
+            // New account: make sure the username is free
+            $baseUsername = $username !== '' ? $username : (strstr($email, '@', true) ?: 'user');
+            $uniqueUsername = $this->generateUniqueUsername($baseUsername);
+            if ($uniqueUsername !== $username && $usernameNode) {
+                $usernameNode->textContent = $uniqueUsername;
+            } elseif (!$usernameNode) {
+                $usernameNode = $node->ownerDocument->createElementNS($deployment->getNamespace(), 'username');
+                $usernameNode->appendChild($node->ownerDocument->createTextNode($uniqueUsername));
+                $node->appendChild($usernameNode);
             }
         }
 
+        $this->usernameChanged = $usernameNode ? trim($usernameNode->textContent) !== $username : true;
+        $user = parent::parseUser($node);
+        if (++$this->importedCount % 100 === 0) {
+            echo '  ' . $this->importedCount . ' users...' . PHP_EOL;
+        }
+
+        // Remember how the username of the source installation maps to this site
+        $journalDeployment = $deployment instanceof UserImportExportDeployment ? $deployment->getJournalDeployment() : null;
+        $importedUser = Repo::user()->getByEmail($email, true);
+        if ($journalDeployment && $importedUser) {
+            if ($username !== '') {
+                $journalDeployment->setMappedUsername($username, $importedUser->getUsername());
+            }
+            $journalDeployment->incrementCounter($existingUser ? 'users (existing accounts reused)' : 'users (new accounts)');
+        }
         return $user;
     }
 
-    public function importUserPasswordValidation($userToImport, $encryption) {
-        $password = parent::importUserPasswordValidation($userToImport, $encryption);
-
-        $this->generateUsername($userToImport);
-
-        return $password;
+    /**
+     * Keep the password hashes of the source installation; never generate a
+     * new password (the native filter does that whenever password_needs_rehash()
+     * is true - the case for every hash OJS 3.5 creates - and then sends an
+     * e-mail for every user, which stalls the import on sites without mail).
+     *
+     * Hashes made by password_hash() are valid on any site. Legacy hashes
+     * (sha1/md5 of username + password) are accepted at login and rehashed as
+     * long as the username and the hashing algorithm did not change; otherwise
+     * the user has to reset the password ("Forgot your password?"), which is
+     * reported as a warning.
+     *
+     * @copydoc UserXmlPKPUserFilter::importUserPasswordValidation()
+     */
+    public function importUserPasswordValidation($userToImport, $encryption)
+    {
+        $passwordHash = (string) $userToImport->getPassword();
+        if (!$encryption || $passwordHash === '') {
+            return parent::importUserPasswordValidation($userToImport, $encryption);
+        }
+        if (Repo::user()->getByEmail($userToImport->getEmail(), true)) {
+            return null; // existing account: the password is kept anyway
+        }
+        $userToImport->setPassword($passwordHash);
+        if (password_get_info($passwordHash)['algo'] === null) {
+            // legacy hash
+            if ($this->usernameChanged || $encryption !== Config::getVar('security', 'encryption')) {
+                $this->addError('User ' . $userToImport->getUsername() . ' (' . $userToImport->getEmail() . ') has a legacy password hash that is bound to the former user name / hashing algorithm; the user has to reset the password with "Forgot your password?".');
+            }
+        }
+        return null;
     }
 
-    public function generateUsername($user) {
-        $baseUsername = preg_replace('/[^A-Z0-9]/i', '', (string) $user->getUsername());
-
-        if (!$baseUsername) {
-            $baseUsername = strstr($user->getEmail(), '@', true) ?: 'user';
+    /**
+     * Derive a username that does not exist yet (invalid characters are removed).
+     */
+    public function generateUniqueUsername(string $baseUsername): string
+    {
+        $base = mb_strtolower(preg_replace('/[^A-Za-z0-9_\-]/', '', $baseUsername));
+        if ($base === '' || $base === null) {
+            $base = 'user';
         }
-
-        $username = $baseUsername;
+        $username = $base;
         $i = 1;
-
-        while (true) {
-            $existingUser = Repo::user()->getByUsername($username, true);
-
-            if (!$existingUser) {
-                break;
-            }
-            if ($user->getId() && $existingUser->getId() == $user->getId()) {
-                break;
-            }
-
-            $username = $baseUsername . $i;
-            $i++;
-
-            if ($i > 1000) {
-                throw new \Exception(
-                                'Unable to generate unique username for: ' . $baseUsername
-                        );
+        while (Repo::user()->getByUsername($username, true)) {
+            $username = $base . $i;
+            if (++$i > 10000) {
+                throw new \Exception('Unable to generate a unique username for ' . $baseUsername);
             }
         }
-
-        $user->setUsername($username);
+        return $username;
     }
 }

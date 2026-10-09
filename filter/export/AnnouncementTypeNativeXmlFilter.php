@@ -1,14 +1,23 @@
 <?php
 
 /**
+ * @file plugins/importexport/fullJournalTransfer/filter/export/AnnouncementTypeNativeXmlFilter.php
+ *
  * Copyright (c) 2014-2024 Lepidus Tecnologia
+ * Copyright (c) 2025-2026 academic-journals-cz
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
+ *
+ * @class AnnouncementTypeNativeXmlFilter
+ *
+ * @brief Converts announcement types to native XML.
  */
+
 namespace APP\plugins\importexport\fullJournalTransfer\filter\export;
 
-use PKP\plugins\importexport\native\filter\NativeExportFilter;
 use DOMDocument;
 use DOMElement;
+use PKP\announcement\AnnouncementType;
+use PKP\plugins\importexport\native\filter\NativeExportFilter;
 
 class AnnouncementTypeNativeXmlFilter extends NativeExportFilter
 {
@@ -23,6 +32,9 @@ class AnnouncementTypeNativeXmlFilter extends NativeExportFilter
         return static::class;
     }
 
+    /**
+     * @param AnnouncementType[] $announcementTypes
+     */
     public function &process(&$announcementTypes)
     {
         $doc = new DOMDocument('1.0', 'utf-8');
@@ -41,13 +53,14 @@ class AnnouncementTypeNativeXmlFilter extends NativeExportFilter
         return $doc;
     }
 
-    public function createAnnouncementTypeNode($doc, $announcementType)
+    public function createAnnouncementTypeNode(DOMDocument $doc, AnnouncementType $announcementType): DOMElement
     {
         $deployment = $this->getDeployment();
 
-        $announcementTypeNode = $doc->createElementNS($deployment->getNamespace(), 'announcement_type');
-        $this->createLocalizedNodes($doc, $announcementTypeNode, 'name', $announcementType->getName(null));
+        $node = $doc->createElementNS($deployment->getNamespace(), 'announcement_type');
+        $node->setAttribute('id', (string) $announcementType->getId());
+        $this->createLocalizedNodes($doc, $node, 'name', $announcementType->getName(null));
 
-        return $announcementTypeNode;
+        return $node;
     }
 }

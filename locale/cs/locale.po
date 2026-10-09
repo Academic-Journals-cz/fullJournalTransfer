@@ -1,0 +1,134 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: fullJournalTransfer\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: cs\n"
+
+msgid "plugins.importexport.fullJournal.displayName"
+msgstr "Plugin pro přenos celého časopisu"
+
+msgid "plugins.importexport.fullJournal.description"
+msgstr "Exportuje a importuje celý časopis (nastavení, uživatele, čísla, články včetně redakčního procesu, log aktivity a statistiky využití) mezi instalacemi OJS 3.5. Pouze z příkazové řádky."
+
+msgid "plugins.importexport.fullJournal.cliUsage"
+msgstr ""
+"Použití: {$scriptName} {$pluginName} [příkaz] ...\n"
+"Příkazy:\n"
+"  export [archiv.tar.gz] [cesta_časopisu] [volby]\n"
+"  import [archiv.tar.gz] [uživatelské_jméno] [volby]\n"
+"Volby:\n"
+"  --no-metrics        neexportovat/neimportovat statistiky využití\n"
+"  --no-activity-log   neexportovat/neimportovat log aktivity (event log, e-mailový log) příspěvků\n"
+"  --no-public-files   neexportovat/neimportovat veřejné soubory časopisu (loga, favicon, styly, obálky)\n"
+"  --journal-path <cesta> použít pro importovaný časopis tuto cestu (URL) místo exportované\n"
+
+msgid "plugins.importexport.fullJournalTransfer.attention"
+msgstr "Upozornění"
+
+msgid "plugins.importexport.fullJournalTransfer.guiAttentionMessage"
+msgstr "Tento plugin lze používat pouze z příkazové řádky. Použití přes webové rozhraní není podporováno.<br>"
+"Další informace najdete v <a target=\"_blank\" rel=\"noopener noreferrer\" href=\"https://github.com/academic-journals-cz/fullJournalTransfer#instructions-for-use\">návodu k použití</a>."
+
+msgid "plugins.importexport.fullJournal.exportingJournal"
+msgstr "Exportuje se časopis {$journalName}..."
+
+msgid "plugins.importexport.fullJournal.exportingUsers"
+msgstr "Exportují se uživatelé..."
+
+msgid "plugins.importexport.fullJournal.exportingSections"
+msgstr "Exportují se sekce..."
+
+msgid "plugins.importexport.fullJournal.exportingIssues"
+msgstr "Exportují se čísla..."
+
+msgid "plugins.importexport.fullJournal.exportingIssue"
+msgstr "Exportuje se číslo {$issue}..."
+
+msgid "plugins.importexport.fullJournal.exportingArticles"
+msgstr "Exportují se články nezařazené do čísla..."
+
+msgid "plugins.importexport.fullJournal.exportingMetrics"
+msgstr "Exportují se statistiky využití..."
+
+msgid "plugins.importexport.fullJournal.creatingArchive"
+msgstr "Vytváří se archiv..."
+
+msgid "plugins.importexport.fullJournal.exportCompleted"
+msgstr "Export byl úspěšně dokončen"
+
+msgid "plugins.importexport.fullJournal.extractingArchive"
+msgstr "Rozbaluje se archiv..."
+
+msgid "plugins.importexport.fullJournal.validatingXml"
+msgstr "Ověřuje se XML dokument..."
+
+msgid "plugins.importexport.fullJournal.importingJournal"
+msgstr "Importuje se časopis..."
+
+msgid "plugins.importexport.fullJournal.importingUsers"
+msgstr "Importují se uživatelé..."
+
+msgid "plugins.importexport.fullJournal.importingSections"
+msgstr "Importují se sekce..."
+
+msgid "plugins.importexport.fullJournal.importingIssues"
+msgstr "Importují se čísla..."
+
+msgid "plugins.importexport.fullJournal.importedIssue"
+msgstr "Importováno číslo {$issue}"
+
+msgid "plugins.importexport.fullJournal.importingArticles"
+msgstr "Importují se články nezařazené do čísla..."
+
+msgid "plugins.importexport.fullJournal.importingMetrics"
+msgstr "Importují se statistiky využití..."
+
+msgid "plugins.importexport.fullJournal.importSummary"
+msgstr "Importované objekty:"
+
+msgid "plugins.importexport.fullJournal.importCompleted"
+msgstr "Import byl úspěšně dokončen"
+
+msgid "plugins.importexport.fullJournal.importedJournal"
+msgstr "Časopis \"{$journalPath}\" byl vytvořen s ID {$journalId} ({$seconds} s)."
+
+msgid "plugins.importexport.fullJournal.importFailed"
+msgstr "Import selhal; všechny změny v databázi byly vráceny zpět."
+
+msgid "plugins.importexport.fullJournal.error.userNotFound"
+msgstr "Uživatel s e-mailem {$email} na tomto webu neexistuje."
+
+msgid "plugins.importexport.fullJournal.error.journalPathExists"
+msgstr "Časopis s cestou \"{$path}\" na tomto webu již existuje."
+
+msgid "plugins.importexport.fullJournal.error.localeNotInstalled"
+msgstr "Primární jazyk časopisu ({$locale}) není na tomto webu nainstalován. Nejprve jazyk nainstalujte (Administrace > Nastavení webu > Jazyky)."
+
+msgid "plugins.importexport.fullJournal.warning.submissionSkipped"
+msgstr "Příspěvek {$submissionId} byl přeskočen: {$reason}."
+
+msgid "plugins.importexport.fullJournal.warning.localesRemoved"
+msgstr "Jazyky {$locales} byly odebrány z nastavení {$setting}, protože nejsou na tomto webu nainstalovány."
+
+msgid "plugins.importexport.fullJournal.warning.themeNotInstalled"
+msgstr "Téma \"{$theme}\" není na tomto webu nainstalováno; bylo použito výchozí téma."
+
+msgid "plugins.importexport.fullJournal.warning.reviewFormNotFound"
+msgstr "Recenzní formulář {$id} ze zdrojové instalace nebyl mezi importovanými recenzními formuláři nalezen."
+
+msgid "plugins.importexport.fullJournal.warning.reviewFormElementNotFound"
+msgstr "Prvek recenzního formuláře {$id} ze zdrojové instalace nebyl nalezen; odpověď byla přeskočena."
+
+msgid "plugins.importexport.fullJournal.warning.fileWithoutParent"
+msgstr "Soubor {$id} nemá recenzní kolo, recenzní přiřazení ani diskusní poznámku, ke které by se připojil, a byl přeskočen."
+
+msgid "plugins.importexport.fullJournal.warning.metricsDirMissing"
+msgstr "Adresář se statistikami využití \"{$dir}\" nebyl v archivu nalezen."
+
+msgid "plugins.importexport.fullJournal.warning.publicFilesMissing"
+msgstr "Adresář s veřejnými soubory \"{$dir}\" nebyl v archivu nalezen."
+
+msgid "plugins.importexport.fullJournal.warning.libraryFileMissing"
+msgstr "Soubor knihovny vydavatele "{$file}" nebyl v archivu nalezen."

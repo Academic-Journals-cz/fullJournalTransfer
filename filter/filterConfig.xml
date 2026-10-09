@@ -2,259 +2,201 @@
 <!DOCTYPE filterConfig SYSTEM "../../../../lib/pkp/dtd/filterConfig.dtd">
 
 <!--
-* filterConfig.xml
-*
-* Copyright (c) 2014-2021 Simon Fraser University
-* Copyright (c) 2003-2021 John Willinsky
-* Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
-*
-* Filter Configuration.
--->
+  * plugins/importexport/fullJournalTransfer/filter/filterConfig.xml
+  *
+  * Copyright (c) 2014-2021 Simon Fraser University
+  * Copyright (c) 2003-2021 John Willinsky
+  * Copyright (c) 2014-2024 Lepidus Tecnologia
+  * Copyright (c) 2025-2026 academic-journals-cz
+  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
+  *
+  * Filter configuration (OJS 3.5). Type descriptions use fully qualified class
+  * names, which work in strict mode as well.
+  -->
 <filterConfig>
-    <filterGroups>
-        <!-- Journal native XML output -->
-        <filterGroup
-            symbolic="journal=>native-xml"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="class::classes.journal.Journal"
-            outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
-        <!-- Journal native XML input -->
-        <filterGroup
-            symbolic="native-xml=>journal"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
-            outputType="class::classes.journal.Journal" />
-        <!-- Native XML Users input -->
-        <filterGroup
-            symbolic="native-xml=>user"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
-            outputType="class::classes.users.User[]" />
-        <!-- Navigation Menu Item native XML output -->
-        <filterGroup
-            symbolic="navigation-menu-item=>native-xml"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="class::lib.pkp.classes.navigationMenu.NavigationMenuItem[]"
-            outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
-        <!-- Navigation Menu Item native XML input -->
-        <filterGroup
-            symbolic="native-xml=>navigation-menu-item"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
-            outputType="class::lib.pkp.classes.navigationMenu.NavigationMenuItem[]" />
-        <!-- Navigation Menu native XML output -->
-        <filterGroup
-            symbolic="navigation-menu=>native-xml"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="class::lib.pkp.classes.navigationMenu.NavigationMenu[]"
-            outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
-        <!-- Navigation Menu native XML input -->
-        <filterGroup
-            symbolic="native-xml=>navigation-menu"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
-            outputType="class::lib.pkp.classes.navigationMenu.NavigationMenu[]" />
-        <!-- Announcement native XML output -->
-        <filterGroup
-            symbolic="announcement=>native-xml"
-            displayName="plugins.importexport\native.displayName"
-            description="plugins.importexport\native.description"
-            inputType="class::lib.pkp.classes.announcement.Announcement[]"
-            outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
-        <!-- Announcement native XML input -->
-        <filterGroup
-            symbolic="native-xml=>announcement"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
-            outputType="class::lib.pkp.classes.announcement.Announcement" />
-        <!-- AnnouncementType native XML output -->
-        <filterGroup
-            symbolic="announcement-type=>native-xml"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="class::lib.pkp.classes.announcement.AnnouncementType"
-            outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
-        <!-- AnnouncementType native XML input -->
-        <filterGroup
-            symbolic="native-xml=>announcement-type"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
-            outputType="class::lib.pkp.classes.announcement.AnnouncementType" />
-        <!-- ReviewForm native XML output -->
-        <filterGroup
-            symbolic="review-form=>native-xml"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="class::lib.pkp.classes.reviewForm.ReviewForm[]"
-            outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
-        <!-- ReviewForm native XML input -->
-        <filterGroup
-            symbolic="native-xml=>review-form"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
-            outputType="class::lib.pkp.classes.reviewForm.ReviewForm" />
-        <!-- WorkflowFile native XML output -->
-        <filterGroup
-            symbolic="workflow-file=>native-xml"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="class::lib.pkp.classes.submission.SubmissionFile"
-            outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
-        <!-- WorkflowFile native XML input -->
-        <filterGroup
-            symbolic="native-xml=>workflow-file"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
-            outputType="class::lib.pkp.classes.submission.SubmissionFile" />
-        <!-- ReviewFormElement native XML output -->
-        <filterGroup
-            symbolic="review-form-element=>native-xml"
-            displayName="plugins.importexport\native.displayName"
-            description="plugins.importexport\native.description"
-            inputType="class::lib.pkp.classes.reviewForm.ReviewFormElement[]"
-            outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
-        <!-- ReviewFormElement native XML input -->
-        <filterGroup
-            symbolic="native-xml=>review-form-element"
-            displayName="plugins.importexport\native.displayName"
-            description="plugins.importexport\native.description"
-            inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
-            outputType="class::lib.pkp.classes.reviewForm.ReviewFormElement[]" />
-        <!-- ExtendedArticle native XML output -->
-        <filterGroup
-            symbolic="extended-article=>native-xml"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="class::classes.submission.Submission[]"
-            outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
-        <!-- ExtendedArticle native XML input -->
-        <filterGroup
-            symbolic="native-xml=>extended-article"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
-            outputType="class::classes.submission.Submission[]" />
-        <!-- Extended Publication native XML input -->
-        <filterGroup
-            symbolic="native-xml=>extended-publication"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
-            outputType="class::classes.publication.Publication[]" />
-        <!-- ExtendedIssue native XML output -->
-        <filterGroup
-            symbolic="extended-issue=>native-xml"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="class::classes.issue.Issue[]"
-            outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
-        <!-- ExtendedIssue native XML input -->
-        <filterGroup
-            symbolic="native-xml=>extended-issue"
-            displayName="plugins.importexport.fullJournalTransfer.displayName"
-            description="plugins.importexport.fullJournalTransfer.description"
-            inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
-            outputType="class::classes.issue.Issue[]" />
-    </filterGroups>
-    <filters>
-        <filter
-            inGroup="journal=>native-xml"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\export\JournalNativeXmlFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="native-xml=>journal"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlJournalFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="native-xml=>user"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlUserFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="navigation-menu-item=>native-xml"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\export\NavigationMenuItemNativeXmlFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="native-xml=>navigation-menu-item"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlNavigationMenuItemFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="navigation-menu=>native-xml"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\export\NavigationMenuNativeXmlFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="native-xml=>navigation-menu"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlNavigationMenuFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="announcement=>native-xml"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\export\AnnouncementNativeXmlFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="native-xml=>announcement"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlAnnouncementFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="announcement-type=>native-xml"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\export\AnnouncementTypeNativeXmlFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="native-xml=>announcement"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlAnnouncementTypeFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="review-form=>native-xml"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\export\ReviewFormNativeXmlFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="native-xml=>review-form"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlReviewFormFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="review-form-element=>native-xml"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\export\ReviewFormElementNativeXmlFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="native-xml=>review-form-element"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlReviewFormElementFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="workflow-file=>native-xml"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\export\WorkflowFileNativeXmlFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="native-xml=>workflow-file"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlWorkflowFileFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="extended-article=>native-xml"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\export\ExtendedArticleNativeXmlFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="native-xml=>extended-article"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlExtendedArticleFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="native-xml=>extended-publication"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlExtendedPublicationFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="extended-issue=>native-xml"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\export\ExtendedIssueNativeXmlFilter"
-            isTemplate="0" />
-        <filter
-            inGroup="native-xml=>extended-issue"
-            class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlExtendedIssueFilter"
-            isTemplate="0" />
-    </filters>
+	<filterGroups>
+		<!-- Journal -->
+		<filterGroup
+			symbolic="journal=>native-xml"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="class::APP\journal\Journal"
+			outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
+		<filterGroup
+			symbolic="native-xml=>journal"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::APP\journal\Journal[]" />
+		<!-- Users (import only; the export uses the users plugin filter) -->
+		<filterGroup
+			symbolic="native-xml=>user"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::PKP\user\User[]" />
+		<!-- Navigation menu items -->
+		<filterGroup
+			symbolic="navigation-menu-item=>native-xml"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="class::PKP\navigationMenu\NavigationMenuItem[]"
+			outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
+		<filterGroup
+			symbolic="native-xml=>navigation-menu-item"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::PKP\navigationMenu\NavigationMenuItem[]" />
+		<!-- Navigation menus -->
+		<filterGroup
+			symbolic="navigation-menu=>native-xml"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="class::PKP\navigationMenu\NavigationMenu[]"
+			outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
+		<filterGroup
+			symbolic="native-xml=>navigation-menu"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::PKP\navigationMenu\NavigationMenu[]" />
+		<!-- Announcements -->
+		<filterGroup
+			symbolic="announcement=>native-xml"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="class::PKP\announcement\Announcement[]"
+			outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
+		<filterGroup
+			symbolic="native-xml=>announcement"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::PKP\announcement\Announcement[]" />
+		<!-- Announcement types -->
+		<filterGroup
+			symbolic="announcement-type=>native-xml"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="class::PKP\announcement\AnnouncementType[]"
+			outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
+		<filterGroup
+			symbolic="native-xml=>announcement-type"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::PKP\announcement\AnnouncementType[]" />
+		<!-- Review forms -->
+		<filterGroup
+			symbolic="review-form=>native-xml"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="class::PKP\reviewForm\ReviewForm[]"
+			outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
+		<filterGroup
+			symbolic="native-xml=>review-form"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::PKP\reviewForm\ReviewForm[]" />
+		<!-- Review form elements -->
+		<filterGroup
+			symbolic="review-form-element=>native-xml"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="class::PKP\reviewForm\ReviewFormElement[]"
+			outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
+		<filterGroup
+			symbolic="native-xml=>review-form-element"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::PKP\reviewForm\ReviewFormElement[]" />
+		<!-- Workflow files (review files, reviewer attachments, discussion files) -->
+		<filterGroup
+			symbolic="workflow-file=>native-xml"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="class::PKP\submissionFile\SubmissionFile"
+			outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
+		<filterGroup
+			symbolic="native-xml=>workflow-file"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::PKP\submissionFile\SubmissionFile[]" />
+		<!-- Extended articles (submissions with workflow data) -->
+		<filterGroup
+			symbolic="extended-article=>native-xml"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="class::APP\submission\Submission[]"
+			outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
+		<filterGroup
+			symbolic="native-xml=>extended-article"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::APP\submission\Submission[]" />
+		<!-- Extended publications (carry the source issue ID; the import records the galley IDs) -->
+		<filterGroup
+			symbolic="extended-publication=>native-xml"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="class::APP\publication\Publication"
+			outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
+		<filterGroup
+			symbolic="native-xml=>extended-publication"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::APP\publication\Publication[]" />
+		<!-- Extended article galleys (import only; DOIs are looked up within the journal) -->
+		<filterGroup
+			symbolic="native-xml=>extended-article-galley"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::PKP\galley\Galley[]" />
+		<!-- Extended issues -->
+		<filterGroup
+			symbolic="extended-issue=>native-xml"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="class::APP\issue\Issue[]"
+			outputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)" />
+		<filterGroup
+			symbolic="native-xml=>extended-issue"
+			displayName="plugins.importexport.fullJournal.displayName"
+			description="plugins.importexport.fullJournal.description"
+			inputType="xml::schema(plugins/importexport/fullJournalTransfer/fullJournal.xsd)"
+			outputType="class::APP\issue\Issue[]" />
+	</filterGroups>
+	<filters>
+		<filter inGroup="journal=>native-xml" class="APP\plugins\importexport\fullJournalTransfer\filter\export\JournalNativeXmlFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>journal" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlJournalFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>user" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlUserFilter" isTemplate="0" />
+		<filter inGroup="navigation-menu-item=>native-xml" class="APP\plugins\importexport\fullJournalTransfer\filter\export\NavigationMenuItemNativeXmlFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>navigation-menu-item" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlNavigationMenuItemFilter" isTemplate="0" />
+		<filter inGroup="navigation-menu=>native-xml" class="APP\plugins\importexport\fullJournalTransfer\filter\export\NavigationMenuNativeXmlFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>navigation-menu" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlNavigationMenuFilter" isTemplate="0" />
+		<filter inGroup="announcement=>native-xml" class="APP\plugins\importexport\fullJournalTransfer\filter\export\AnnouncementNativeXmlFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>announcement" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlAnnouncementFilter" isTemplate="0" />
+		<filter inGroup="announcement-type=>native-xml" class="APP\plugins\importexport\fullJournalTransfer\filter\export\AnnouncementTypeNativeXmlFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>announcement-type" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlAnnouncementTypeFilter" isTemplate="0" />
+		<filter inGroup="review-form=>native-xml" class="APP\plugins\importexport\fullJournalTransfer\filter\export\ReviewFormNativeXmlFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>review-form" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlReviewFormFilter" isTemplate="0" />
+		<filter inGroup="review-form-element=>native-xml" class="APP\plugins\importexport\fullJournalTransfer\filter\export\ReviewFormElementNativeXmlFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>review-form-element" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlReviewFormElementFilter" isTemplate="0" />
+		<filter inGroup="workflow-file=>native-xml" class="APP\plugins\importexport\fullJournalTransfer\filter\export\WorkflowFileNativeXmlFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>workflow-file" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlWorkflowFileFilter" isTemplate="0" />
+		<filter inGroup="extended-article=>native-xml" class="APP\plugins\importexport\fullJournalTransfer\filter\export\ExtendedArticleNativeXmlFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>extended-article" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlExtendedArticleFilter" isTemplate="0" />
+		<filter inGroup="extended-publication=>native-xml" class="APP\plugins\importexport\fullJournalTransfer\filter\export\ExtendedPublicationNativeXmlFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>extended-publication" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlExtendedPublicationFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>extended-article-galley" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlExtendedArticleGalleyFilter" isTemplate="0" />
+		<filter inGroup="extended-issue=>native-xml" class="APP\plugins\importexport\fullJournalTransfer\filter\export\ExtendedIssueNativeXmlFilter" isTemplate="0" />
+		<filter inGroup="native-xml=>extended-issue" class="APP\plugins\importexport\fullJournalTransfer\filter\import\NativeXmlExtendedIssueFilter" isTemplate="0" />
+	</filters>
 </filterConfig>

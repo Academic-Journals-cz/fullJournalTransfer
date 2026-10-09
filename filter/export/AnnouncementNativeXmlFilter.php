@@ -1,14 +1,25 @@
 <?php
 
 /**
+ * @file plugins/importexport/fullJournalTransfer/filter/export/AnnouncementNativeXmlFilter.php
+ *
  * Copyright (c) 2014-2024 Lepidus Tecnologia
+ * Copyright (c) 2025-2026 academic-journals-cz
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
+ *
+ * @class AnnouncementNativeXmlFilter
+ *
+ * @brief Converts announcements to native XML.
  */
+
 namespace APP\plugins\importexport\fullJournalTransfer\filter\export;
 
-use PKP\plugins\importexport\native\filter\NativeExportFilter;
+use APP\plugins\importexport\fullJournalTransfer\classes\XmlText;
 use DOMDocument;
 use DOMElement;
+use PKP\announcement\Announcement;
+use PKP\db\DAORegistry;
+use PKP\plugins\importexport\native\filter\NativeExportFilter;
 
 class AnnouncementNativeXmlFilter extends NativeExportFilter
 {
@@ -23,6 +34,9 @@ class AnnouncementNativeXmlFilter extends NativeExportFilter
         return static::class;
     }
 
+    /**
+     * @param Announcement[] $announcements
+     */
     public function &process(&$announcements)
     {
         $doc = new DOMDocument('1.0', 'utf-8');
@@ -41,73 +55,58 @@ class AnnouncementNativeXmlFilter extends NativeExportFilter
         return $doc;
     }
 
-    public function createAnnouncementNode($doc, $announcement)
+    public function createAnnouncementNode(DOMDocument $doc, Announcement $announcement): DOMElement
     {
         $deployment = $this->getDeployment();
         $context = $deployment->getContext();
 
-        $announcementNode = $doc->createElementNS($deployment->getNamespace(), 'announcement');
+        $node = $doc->createElementNS($deployment->getNamespace(), 'announcement');
 
-        $announcementNode->appendChild($node = $doc->createElementNS(
-            $deployment->getNamespace(),
-            'id',
-            $announcement->getId()
-        ));
-        $node->setAttribute('type', 'internal');
-        $node->setAttribute('advice', 'ignore');
+        $idNode = $doc->createElementNS($deployment->getNamespace(), 'id', (string) $announcement->id);
+        $idNode->setAttribute('type', 'internal');
+        $idNode->setAttribute('advice', 'ignore');
+        $node->appendChild($idNode);
 
-        $this->addDates($doc, $announcementNode, $announcement);
-
-        $this->createLocalizedNodes(
-            $doc,
-            $announcementNode,
-            'title',
-            $announcement->getTitle(null)
-        );
-        $this->createLocalizedNodes(
-            $doc,
-            $announcementNode,
-            'description_short',
-            $announcement->getDescriptionShort(null)
-        );
-        $this->createLocalizedNodes(
-            $doc,
-            $announcementNode,
-            'description',
-            $announcement->getDescription(null)
-        );
-
-        if ($announcement->getTypeId()) {
-            $announcementTypeDAO = DAORegistry::getDAO('AnnouncementTypeDAO');
-            $announcementType = $announcementTypeDAO->getById($announcement->getTypeId());
-            $announcementNode->appendChild($doc->createElementNS(
-                $deployment->getNamespace(),
-                'announcement_type_ref',
-                htmlspecialchars($announcementType->getName($context->getPrimaryLocale()), ENT_COMPAT, 'UTF-8')
-            ));
+        if ($announcement->dateExpire) {
+            $node->appendChild($doc->createElementNS($deployment->getNamespace(), 'date_expire', date('Y-m-d', strtotime((string) $announcement->dateExpire))));
+        }
+        if ($announcement->datePosted) {
+            $node->appendChild($doc->createElementNS($deployment->getNamespace(), 'date_posted', date('Y-m-d H:i:s', strtotime((string) $announcement->datePosted))));
         }
 
-        return $announcementNode;
+        $this->createLocalizedNodes($doc, $node, 'title', $this->sanitizeLocalized($announcement->title));
+        $this->createLocalizedNodes($doc, $node, 'description_short', $this->sanitizeLocalized($announcement->descriptionShort));
+        $this->createLocalizedNodes($doc, $node, 'description', $this->sanitizeLocalized($announcement->description));
+
+        if ($announcement->typeId) {
+            $announcementTypeDao = DAORegistry::getDAO('AnnouncementTypeDAO'); /** @var \PKP\announcement\AnnouncementTypeDAO $announcementTypeDao */
+            $announcementType = $announcementTypeDao->getById((int) $announcement->typeId);
+            if ($announcementType) {
+                $typeName = $announcementType->getName($context->getPrimaryLocale()) ?: $announcementType->getLocalizedTypeName();
+                $node->appendChild($doc->createElementNS(
+                    $deployment->getNamespace(),
+                    'announcement_type_ref',
+                    htmlspecialchars((string) $typeName, ENT_COMPAT, 'UTF-8')
+                ));
+            }
+        }
+
+        // The image data (file name, alt text) refers to a file in the public files directory
+        $image = $announcement->image;
+        if (is_array($image) && !empty($image['uploadName'])) {
+            $imageNode = $doc->createElementNS($deployment->getNamespace(), 'image');
+            $imageNode->appendChild($doc->createTextNode(json_encode($image)));
+            $node->appendChild($imageNode);
+        }
+
+        return $node;
     }
 
-    public function addDates($doc, $announcementNode, $announcement)
+    private function sanitizeLocalized($values): ?array
     {
-        $deployment = $this->getDeployment();
-
-        if ($announcement->getDateExpire()) {
-            $announcementNode->appendChild($node = $doc->createElementNS(
-                $deployment->getNamespace(),
-                'date_expire',
-                strftime('%Y-%m-%d', strtotime($announcement->getDateExpire()))
-            ));
+        if (!is_array($values)) {
+            return null;
         }
-
-        if ($announcement->getDatePosted()) {
-            $announcementNode->appendChild($node = $doc->createElementNS(
-                $deployment->getNamespace(),
-                'date_posted',
-                strftime('%Y-%m-%d %H:%M:%S', strtotime($announcement->getDatetimePosted()))
-            ));
-        }
+        return array_map(fn ($value) => XmlText::sanitize((string) $value), $values);
     }
 }

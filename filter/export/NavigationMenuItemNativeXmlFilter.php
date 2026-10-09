@@ -1,14 +1,23 @@
 <?php
 
 /**
+ * @file plugins/importexport/fullJournalTransfer/filter/export/NavigationMenuItemNativeXmlFilter.php
+ *
  * Copyright (c) 2014-2024 Lepidus Tecnologia
+ * Copyright (c) 2025-2026 academic-journals-cz
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
+ *
+ * @class NavigationMenuItemNativeXmlFilter
+ *
+ * @brief Converts navigation menu items to native XML.
  */
+
 namespace APP\plugins\importexport\fullJournalTransfer\filter\export;
 
-use PKP\plugins\importexport\native\filter\NativeExportFilter;
 use DOMDocument;
 use DOMElement;
+use PKP\navigationMenu\NavigationMenuItem;
+use PKP\plugins\importexport\native\filter\NativeExportFilter;
 
 class NavigationMenuItemNativeXmlFilter extends NativeExportFilter
 {
@@ -23,6 +32,9 @@ class NavigationMenuItemNativeXmlFilter extends NativeExportFilter
         return static::class;
     }
 
+    /**
+     * @param NavigationMenuItem[] $navigationMenuItems
+     */
     public function &process(&$navigationMenuItems)
     {
         $doc = new DOMDocument('1.0', 'utf-8');
@@ -41,40 +53,29 @@ class NavigationMenuItemNativeXmlFilter extends NativeExportFilter
         return $doc;
     }
 
-    public function createNavigationMenuItemNode($doc, $navigationMenuItem)
+    public function createNavigationMenuItemNode(DOMDocument $doc, NavigationMenuItem $navigationMenuItem): DOMElement
     {
         $deployment = $this->getDeployment();
 
-        $navigationMenuItemNode = $doc->createElementNS($deployment->getNamespace(), 'navigation_menu_item');
-
-        $navigationMenuItemNode->setAttribute('id', $navigationMenuItem->getId());
-        $navigationMenuItemNode->setAttribute('type', $navigationMenuItem->getType());
+        $node = $doc->createElementNS($deployment->getNamespace(), 'navigation_menu_item');
+        $node->setAttribute('id', (string) $navigationMenuItem->getId());
+        $node->setAttribute('type', (string) $navigationMenuItem->getType());
         if ($navigationMenuItem->getPath()) {
-            $navigationMenuItemNode->setAttribute('path', $navigationMenuItem->getPath());
+            $node->setAttribute('path', $navigationMenuItem->getPath());
         }
         if ($navigationMenuItem->getTitleLocaleKey()) {
-            $navigationMenuItemNode->setAttribute('title_locale_key', $navigationMenuItem->getTitleLocaleKey());
+            $node->setAttribute('title_locale_key', $navigationMenuItem->getTitleLocaleKey());
         }
 
-        $this->createLocalizedNodes(
-            $doc,
-            $navigationMenuItemNode,
-            'title',
-            $navigationMenuItem->getTitle(null)
-        );
-        $this->createLocalizedNodes(
-            $doc,
-            $navigationMenuItemNode,
-            'content',
-            $navigationMenuItem->getContent(null)
-        );
-        $this->createLocalizedNodes(
-            $doc,
-            $navigationMenuItemNode,
-            'remote_url',
-            $navigationMenuItem->getRemoteUrl(null)
-        );
+        $this->createLocalizedNodes($doc, $node, 'title', $this->asLocalizedArray($navigationMenuItem->getTitle(null)));
+        $this->createLocalizedNodes($doc, $node, 'content', $this->asLocalizedArray($navigationMenuItem->getContent(null)));
+        $this->createLocalizedNodes($doc, $node, 'remote_url', $this->asLocalizedArray($navigationMenuItem->getRemoteUrl(null)));
 
-        return $navigationMenuItemNode;
+        return $node;
+    }
+
+    private function asLocalizedArray($value): ?array
+    {
+        return is_array($value) ? $value : null;
     }
 }

@@ -4,98 +4,620 @@
   * plugins/importexport/fullJournalTransfer/fullJournal.xsd
   *
   * Copyright (c) 2014-2024 Lepidus Tecnologia
+  * Copyright (c) 2025-2026 academic-journals-cz
   * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
+  *
+  * Schema of the full journal transfer document (OJS 3.5).
   -->
 
 <schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://pkp.sfu.ca"
-    xmlns:pkp="http://pkp.sfu.ca" elementFormDefault="qualified">
+	xmlns:pkp="http://pkp.sfu.ca" elementFormDefault="qualified">
 
-    <!--
-	  - Base the native import/export schema on the PKP submission model.
+	<!-- Base the schema on the native import/export schema of OJS and on the users schema -->
+	<include schemaLocation="../../../plugins/importexport/native/native.xsd" />
+	<include schemaLocation="../../../lib/pkp/plugins/importexport/users/pkp-users.xsd" />
+
+	<!--
+	  - Generic types
 	  -->
-    <include schemaLocation="../../../plugins/importexport/native/native.xsd" />
 
-    <include schemaLocation="../../../lib/pkp/plugins/importexport/users/pkp-users.xsd" />
-
-    <complexType name="journal">
-		<sequence>
-			<element name="email_signature" type="string" minOccurs="1" maxOccurs="1" />
-			<element name="supported_locales" type="string" minOccurs="1" maxOccurs="1" />
-			<element name="supported_form_locales" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="supported_submission_locales" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="contact_email" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="contact_name" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="contact_phone" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="mailing_address" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="online_issn" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="print_issn" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="publisher_institution" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="support_email" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="support_name" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="support_phone" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="acronym" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="author_information" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="clockss_license" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="librarian_information" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="lockss_license" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="name" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="open_access_policy" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="privacy_statement" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="reader_information" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="abbreviation" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="about" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="contact_affiliation" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="description" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="editorial_team" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="submission_checklist" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
-                        <element name="begin_submission_help" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
-                        <element name="contributors_help" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
-                        <element name="details_help" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
-                        <element name="for_the_editors_help" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
-                        <element name="review_help" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
-                        <element name="upload_files_help" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded"/>
-			<element ref="pkp:plugins" minOccurs="0" maxOccurs="unbounded" />
-			<element ref="pkp:navigation_menu_items" minOccurs="0" maxOccurs="unbounded" />
-			<element ref="pkp:navigation_menus" minOccurs="0" maxOccurs="unbounded" />
-			<element ref="pkp:PKPUsers" minOccurs="0" maxOccurs="unbounded" />
-			<element ref="pkp:genres" minOccurs="0" maxOccurs="unbounded" />
-			<element ref="pkp:sections" minOccurs="0" maxOccurs="unbounded" />
-			<element ref="pkp:review_forms" minOccurs="0" maxOccurs="unbounded" />
-			<element ref="pkp:extended_issue" minOccurs="0" maxOccurs="unbounded" />
-			<element ref="pkp:extended_issues" minOccurs="0" maxOccurs="unbounded" />
-			<element ref="pkp:extended_articles" minOccurs="0" maxOccurs="unbounded" />
-			<element ref="pkp:metrics" minOccurs="0" maxOccurs="unbounded" />
-		</sequence>
-		<attribute name="seq" type="int" />
-		<attribute name="url_path" type="string" />
-		<attribute name="primary_locale" type="string" />
-		<attribute name="enabled" type="string" />
-		<attribute name="copyright_year_basis" type="string" />
-		<attribute name="default_review_mode" type="string" />
-		<attribute name="disable_submissions" type="boolean" />
-		<attribute name="enable_oai" type="string" />
-		<attribute name="items_per_page" type="string" />
-		<attribute name="keywords" type="string" />
-		<attribute name="membership_fee" type="string" />
-		<attribute name="num_page_links" type="string" />
-		<attribute name="num_weeks_per_response" type="string" />
-		<attribute name="num_weeks_per_review" type="string" />
-		<attribute name="publication_fee" type="string" />
-		<attribute name="purchase_article_fee" type="string" />
-		<attribute name="theme_plugin_path" type="string" />
+	<!-- A setting row: name, optional locale, raw value -->
+	<complexType name="named_setting" mixed="true">
+		<attribute name="name" type="string" use="required" />
+		<attribute name="locale" type="string" use="optional" />
+		<attribute name="user_email" type="string" use="optional" />
 	</complexType>
 
-    <element name="extended_article" substitutionGroup="pkp:submission">
+	<!--
+	  - Journal
+	  -->
+	<complexType name="journal">
+		<sequence>
+			<element name="setting" type="pkp:named_setting" minOccurs="0" maxOccurs="unbounded" />
+			<element ref="pkp:plugins" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:navigation_menu_items" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:navigation_menus" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:email_templates" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:journal_user_groups" minOccurs="0" maxOccurs="1" />
+			<!-- Users: the structure of the users plugin (PKPUsers), but users without any
+			     role in the journal are allowed (e.g. a former editor referenced by the workflow) -->
+			<element name="PKPUsers" minOccurs="0" maxOccurs="1">
+				<complexType>
+					<sequence>
+						<element ref="pkp:user_groups" maxOccurs="1" />
+						<element name="users" minOccurs="0" maxOccurs="1">
+							<complexType>
+								<sequence>
+									<element name="user" type="pkp:journal_user" minOccurs="0" maxOccurs="unbounded" />
+								</sequence>
+							</complexType>
+						</element>
+					</sequence>
+				</complexType>
+			</element>
+			<element ref="pkp:genres" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:review_forms" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:journal_sections" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:categories" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:subeditor_groups" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:highlights" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:institutions" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:announcement_types" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:announcements" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:dois" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:extended_issues" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:extended_articles" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:library_files" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:metrics" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:public_files" minOccurs="0" maxOccurs="1" />
+		</sequence>
+		<attribute name="url_path" type="string" use="required" />
+		<attribute name="primary_locale" type="string" use="required" />
+		<attribute name="enabled" type="int" />
+		<attribute name="seq" type="int" />
+		<attribute name="source_id" type="int" />
+		<attribute name="ojs_version" type="string" />
+		<attribute name="exported" type="string" />
+	</complexType>
+	<element name="journal" type="pkp:journal" />
+
+	<!-- A user of the journal: pkp:user of the users plugin with optional roles -->
+	<complexType name="journal_user">
+		<complexContent>
+			<extension base="pkp:identity">
+				<sequence>
+					<element name="username" type="string" minOccurs="1" maxOccurs="1" />
+					<element name="gossip" type="string" minOccurs="0" maxOccurs="1" />
+					<element name="signature" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+					<element name="password" type="pkp:password" minOccurs="1" maxOccurs="1" />
+					<element name="date_registered" type="string" minOccurs="0" maxOccurs="1" />
+					<element name="date_last_login" type="string" minOccurs="0" maxOccurs="1" />
+					<element name="date_last_email" type="string" minOccurs="0" maxOccurs="1" />
+					<element name="date_validated" type="string" minOccurs="0" maxOccurs="1" />
+					<element name="inline_help" type="string" minOccurs="0" maxOccurs="1" />
+					<element name="auth_string" type="string" minOccurs="0" maxOccurs="1" />
+					<element name="phone" type="string" minOccurs="0" maxOccurs="1" />
+					<element name="mailing_address" type="string" minOccurs="0" maxOccurs="1" />
+					<element name="billing_address" type="string" minOccurs="0" maxOccurs="1" />
+					<element name="locales" type="string" minOccurs="0" maxOccurs="1" />
+					<element name="disabled_reason" type="string" minOccurs="0" maxOccurs="1" />
+					<element name="user_user_group" type="pkp:user_user_group" minOccurs="0" maxOccurs="unbounded" />
+					<element name="review_interests" type="string" minOccurs="0" maxOccurs="1" />
+				</sequence>
+			</extension>
+		</complexContent>
+	</complexType>
+
+	<!--
+	  - Plugin settings
+	  -->
+	<element name="plugins">
+		<complexType>
+			<sequence>
+				<element ref="pkp:plugin" minOccurs="0" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+	<complexType name="plugin">
+		<sequence>
+			<element name="plugin_setting" type="pkp:plugin_setting" minOccurs="0" maxOccurs="unbounded" />
+		</sequence>
+		<attribute name="plugin_name" type="string" use="required" />
+	</complexType>
+	<element name="plugin" type="pkp:plugin" />
+	<complexType name="plugin_setting" mixed="true">
+		<attribute name="setting_name" type="string" use="required" />
+		<attribute name="setting_type" type="string" />
+	</complexType>
+
+	<!--
+	  - Navigation menus
+	  -->
+	<element name="navigation_menu_items">
+		<complexType>
+			<sequence>
+				<element ref="pkp:navigation_menu_item" minOccurs="0" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+	<complexType name="navigation_menu_item">
+		<sequence>
+			<element name="title" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+			<element name="content" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+			<element name="remote_url" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+		</sequence>
+		<attribute name="id" type="int" use="required" />
+		<attribute name="type" type="string" use="required" />
+		<attribute name="path" type="string" />
+		<attribute name="title_locale_key" type="string" />
+	</complexType>
+	<element name="navigation_menu_item" type="pkp:navigation_menu_item" />
+
+	<element name="navigation_menus">
+		<complexType>
+			<sequence>
+				<element ref="pkp:navigation_menu" minOccurs="0" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+	<complexType name="navigation_menu">
+		<sequence>
+			<element name="title" type="string" minOccurs="1" maxOccurs="1" />
+			<element name="area_name" type="string" minOccurs="1" maxOccurs="1" />
+			<element name="navigation_menu_item_assignment" type="pkp:navigation_menu_item_assignment" minOccurs="0" maxOccurs="unbounded" />
+		</sequence>
+	</complexType>
+	<element name="navigation_menu" type="pkp:navigation_menu" />
+	<complexType name="navigation_menu_item_assignment">
+		<sequence>
+			<element name="title" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+		</sequence>
+		<attribute name="menu_item_id" type="int" use="required" />
+		<attribute name="parent_id" type="int" />
+		<attribute name="seq" type="int" />
+	</complexType>
+
+	<!--
+	  - User groups (roles) of the journal: all columns of user_groups and the
+	  - raw user_group_settings rows. The user_groups element inside PKPUsers
+	  - (native users schema) only carries a subset of the data; the native user
+	  - import then finds these groups by name.
+	  -->
+	<element name="journal_user_groups">
+		<complexType>
+			<sequence>
+				<element ref="pkp:journal_user_group" minOccurs="0" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+	<complexType name="journal_user_group">
+		<sequence>
+			<element name="setting" type="pkp:named_setting" minOccurs="0" maxOccurs="unbounded" />
+		</sequence>
+		<attribute name="id" type="int" use="required" />
+		<attribute name="role_id" type="int" use="required" />
+		<attribute name="is_default" type="int" />
+		<attribute name="show_title" type="int" />
+		<attribute name="permit_self_registration" type="int" />
+		<attribute name="permit_metadata_edit" type="int" />
+		<attribute name="permit_settings" type="int" />
+		<attribute name="masthead" type="int" />
+		<attribute name="stages" type="string" />
+	</complexType>
+	<element name="journal_user_group" type="pkp:journal_user_group" />
+
+	<!--
+	  - DOIs of the journal (dois table with status + raw doi_settings rows, e.g.
+	  - the registration status of the registration agency plugins). The objects
+	  - (issues, publications, galleys) reference the DOIs by identifier.
+	  -->
+	<element name="dois">
+		<complexType>
+			<sequence>
+				<element ref="pkp:doi_object" minOccurs="0" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+	<complexType name="doi_object">
+		<sequence>
+			<element name="setting" type="pkp:named_setting" minOccurs="0" maxOccurs="unbounded" />
+		</sequence>
+		<attribute name="id" type="int" use="required" />
+		<attribute name="doi" type="string" use="required" />
+		<attribute name="status" type="int" />
+	</complexType>
+	<element name="doi_object" type="pkp:doi_object" />
+
+	<!--
+	  - E-mail templates
+	  -->
+	<element name="email_templates">
+		<complexType>
+			<sequence>
+				<element name="email_template" minOccurs="0" maxOccurs="unbounded">
+					<complexType>
+						<sequence>
+							<element name="setting" type="pkp:named_setting" minOccurs="0" maxOccurs="unbounded" />
+						</sequence>
+						<attribute name="email_key" type="string" use="required" />
+						<attribute name="alternate_to" type="string" />
+					</complexType>
+				</element>
+			</sequence>
+		</complexType>
+	</element>
+
+	<!--
+	  - Genres
+	  -->
+	<element name="genres">
+		<complexType>
+			<sequence>
+				<element ref="pkp:genre" minOccurs="0" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+	<complexType name="genre">
+		<sequence>
+			<element ref="pkp:id" minOccurs="0" maxOccurs="unbounded" />
+			<element name="name" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+		</sequence>
+		<attribute name="key" type="string" />
+		<attribute name="category" type="int" />
+		<attribute name="dependent" type="int" />
+		<attribute name="supplementary" type="int" />
+		<attribute name="required" type="int" />
+		<attribute name="seq" type="int" />
+		<attribute name="enabled" type="int" />
+	</complexType>
+	<element name="genre" type="pkp:genre" />
+
+	<!--
+	  - Review forms
+	  -->
+	<element name="review_forms">
+		<complexType>
+			<sequence>
+				<element ref="pkp:review_form" minOccurs="0" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+	<complexType name="review_form">
+		<sequence>
+			<element name="title" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+			<element name="description" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+			<element ref="pkp:review_form_elements" minOccurs="0" maxOccurs="1" />
+		</sequence>
+		<attribute name="id" type="int" use="required" />
+		<attribute name="seq" type="int" />
+		<attribute name="is_active" type="int" />
+	</complexType>
+	<element name="review_form" type="pkp:review_form" />
+
+	<element name="review_form_elements">
+		<complexType>
+			<sequence>
+				<element ref="pkp:review_form_element" minOccurs="0" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+	<complexType name="review_form_element">
+		<sequence>
+			<element name="question" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+			<element name="description" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+			<element name="possible_responses" minOccurs="0" maxOccurs="unbounded">
+				<complexType>
+					<sequence>
+						<element name="possible_response" type="string" minOccurs="0" maxOccurs="unbounded" />
+					</sequence>
+					<attribute name="locale" type="string" />
+				</complexType>
+			</element>
+		</sequence>
+		<attribute name="id" type="int" use="required" />
+		<attribute name="seq" type="int" />
+		<attribute name="element_type" type="int" />
+		<attribute name="required" type="int" />
+		<attribute name="included" type="int" />
+	</complexType>
+	<element name="review_form_element" type="pkp:review_form_element" />
+
+	<!--
+	  - Journal sections (the native "section" type extended with the 3.5 properties)
+	  -->
+	<element name="journal_sections">
+		<complexType>
+			<sequence>
+				<element ref="pkp:journal_section" minOccurs="0" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+	<element name="journal_section">
+		<complexType>
+			<complexContent>
+				<extension base="pkp:section">
+					<sequence>
+						<element name="identify_type" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+					</sequence>
+					<attribute name="is_inactive" type="int" />
+				</extension>
+			</complexContent>
+		</complexType>
+	</element>
+
+	<!--
+	  - Categories (raw rows of categories + category_settings)
+	  -->
+	<element name="categories">
+		<complexType>
+			<sequence>
+				<element ref="pkp:journal_category" minOccurs="0" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+	<complexType name="journal_category">
+		<sequence>
+			<element name="setting" type="pkp:named_setting" minOccurs="0" maxOccurs="unbounded" />
+		</sequence>
+		<attribute name="id" type="int" use="required" />
+		<attribute name="parent_id" type="int" />
+		<attribute name="seq" type="int" />
+		<attribute name="path" type="string" use="required" />
+		<attribute name="image" type="string" />
+	</complexType>
+	<element name="journal_category" type="pkp:journal_category" />
+
+	<!--
+	  - Section / category editors (subeditor_submission_group): the users that
+	  - are assigned automatically to new submissions of a section or category
+	  -->
+	<element name="subeditor_groups">
+		<complexType>
+			<sequence>
+				<element name="subeditor_group" minOccurs="0" maxOccurs="unbounded">
+					<complexType>
+						<attribute name="assoc_type" type="int" use="required" />
+						<attribute name="assoc_id" type="int" use="required" />
+						<attribute name="user_email" type="string" use="required" />
+						<attribute name="user_group_id" type="int" use="required" />
+					</complexType>
+				</element>
+			</sequence>
+		</complexType>
+	</element>
+
+	<!--
+	  - Highlights of the homepage (raw rows of highlights + highlight_settings)
+	  -->
+	<element name="highlights">
+		<complexType>
+			<sequence>
+				<element name="highlight" minOccurs="0" maxOccurs="unbounded">
+					<complexType>
+						<sequence>
+							<element name="setting" type="pkp:named_setting" minOccurs="0" maxOccurs="unbounded" />
+						</sequence>
+						<attribute name="id" type="int" use="required" />
+						<attribute name="sequence" type="int" />
+						<attribute name="url" type="string" />
+					</complexType>
+				</element>
+			</sequence>
+		</complexType>
+	</element>
+
+	<!--
+	  - Institutions (COUNTER statistics; raw rows of institutions, institution_settings
+	  - and institution_ip)
+	  -->
+	<element name="institutions">
+		<complexType>
+			<sequence>
+				<element name="institution" minOccurs="0" maxOccurs="unbounded">
+					<complexType>
+						<sequence>
+							<element name="setting" type="pkp:named_setting" minOccurs="0" maxOccurs="unbounded" />
+							<element name="ip" minOccurs="0" maxOccurs="unbounded">
+								<complexType>
+									<attribute name="ip_string" type="string" use="required" />
+									<attribute name="ip_start" type="long" />
+									<attribute name="ip_end" type="long" />
+								</complexType>
+							</element>
+						</sequence>
+						<attribute name="id" type="int" use="required" />
+						<attribute name="ror" type="string" />
+						<attribute name="deleted_at" type="string" />
+					</complexType>
+				</element>
+			</sequence>
+		</complexType>
+	</element>
+
+	<!--
+	  - Publisher library and submission library files (raw rows of library_files
+	  - + library_file_settings; the files are in the files directory of the journal)
+	  -->
+	<element name="library_files">
+		<complexType>
+			<sequence>
+				<element name="library_file" minOccurs="0" maxOccurs="unbounded">
+					<complexType>
+						<sequence>
+							<element name="setting" type="pkp:named_setting" minOccurs="0" maxOccurs="unbounded" />
+						</sequence>
+						<attribute name="id" type="int" use="required" />
+						<attribute name="file_name" type="string" use="required" />
+						<attribute name="src" type="string" />
+						<attribute name="original_file_name" type="string" />
+						<attribute name="file_type" type="string" />
+						<attribute name="file_size" type="long" />
+						<attribute name="type" type="int" />
+						<attribute name="date_uploaded" type="string" />
+						<attribute name="date_modified" type="string" />
+						<attribute name="submission_id" type="int" />
+						<attribute name="public_access" type="int" />
+					</complexType>
+				</element>
+			</sequence>
+		</complexType>
+	</element>
+
+	<!--
+	  - Announcements
+	  -->
+	<element name="announcement_types">
+		<complexType>
+			<sequence>
+				<element ref="pkp:announcement_type" minOccurs="0" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+	<complexType name="announcement_type">
+		<sequence>
+			<element name="name" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+		</sequence>
+		<attribute name="id" type="int" />
+	</complexType>
+	<element name="announcement_type" type="pkp:announcement_type" />
+
+	<element name="announcements">
+		<complexType>
+			<sequence>
+				<element ref="pkp:announcement" minOccurs="0" maxOccurs="unbounded" />
+			</sequence>
+		</complexType>
+	</element>
+	<complexType name="announcement">
+		<sequence>
+			<element ref="pkp:id" minOccurs="0" maxOccurs="unbounded" />
+			<element name="date_expire" type="string" minOccurs="0" maxOccurs="1" />
+			<element name="date_posted" type="string" minOccurs="0" maxOccurs="1" />
+			<element name="title" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+			<element name="description_short" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+			<element name="description" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+			<element name="announcement_type_ref" type="string" minOccurs="0" maxOccurs="1" />
+			<element name="image" type="string" minOccurs="0" maxOccurs="1" />
+		</sequence>
+	</complexType>
+	<element name="announcement" type="pkp:announcement" />
+
+	<!--
+	  - Issues
+	  -->
+	<element name="extended_issues">
+		<complexType>
+			<sequence>
+				<element ref="pkp:extended_issue" minOccurs="0" maxOccurs="unbounded" />
+				<element name="custom_order" minOccurs="0" maxOccurs="unbounded">
+					<complexType mixed="true">
+						<attribute name="id" type="int" use="required" />
+					</complexType>
+				</element>
+			</sequence>
+		</complexType>
+	</element>
+	<complexType name="extended_issue">
+		<sequence>
+			<element ref="pkp:id" minOccurs="0" maxOccurs="unbounded" />
+			<element name="description" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
+			<element ref="pkp:issue_identification" minOccurs="1" maxOccurs="1" />
+			<element name="date_published" type="dateTime" minOccurs="0" maxOccurs="1" />
+			<element name="date_notified" type="dateTime" minOccurs="0" maxOccurs="1" />
+			<element name="last_modified" type="dateTime" minOccurs="0" maxOccurs="1" />
+			<element name="open_access_date" type="dateTime" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:sections" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:covers" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:issue_galleys" minOccurs="0" maxOccurs="1" />
+			<element ref="pkp:extended_articles" minOccurs="0" maxOccurs="1" />
+			<element name="custom_section_order" minOccurs="0" maxOccurs="unbounded">
+				<complexType mixed="true">
+					<attribute name="section_ref" type="string" use="required" />
+				</complexType>
+			</element>
+		</sequence>
+		<attribute name="published" type="int" />
+		<attribute name="current" type="int" />
+		<attribute name="access_status" type="int" />
+		<attribute name="url_path" type="string" />
+	</complexType>
+	<element name="extended_issue" type="pkp:extended_issue" />
+
+	<!--
+	  - Articles: the native article extended with the editorial workflow
+	  -->
+	<element name="extended_article" substitutionGroup="pkp:submission">
 		<complexType>
 			<complexContent>
 				<extension base="pkp:submission">
-                    <sequence>
+					<sequence>
+						<element name="publication_categories" minOccurs="0" maxOccurs="1">
+							<complexType>
+								<sequence>
+									<element name="publication_category" minOccurs="0" maxOccurs="unbounded">
+										<complexType>
+											<attribute name="publication_id" type="int" use="required" />
+											<attribute name="category_id" type="int" use="required" />
+										</complexType>
+									</element>
+								</sequence>
+							</complexType>
+						</element>
+						<element name="reviewer_suggestions" minOccurs="0" maxOccurs="1">
+							<complexType>
+								<sequence>
+									<element name="reviewer_suggestion" minOccurs="0" maxOccurs="unbounded">
+										<complexType>
+											<sequence>
+												<element name="setting" type="pkp:named_setting" minOccurs="0" maxOccurs="unbounded" />
+											</sequence>
+											<attribute name="suggesting_user_email" type="string" />
+											<attribute name="email" type="string" use="required" />
+											<attribute name="orcid_id" type="string" />
+											<attribute name="approved_at" type="string" />
+											<attribute name="approver_email" type="string" />
+											<attribute name="reviewer_email" type="string" />
+											<attribute name="created_at" type="string" />
+											<attribute name="updated_at" type="string" />
+										</complexType>
+									</element>
+								</sequence>
+							</complexType>
+						</element>
+						<!-- created_at / updated_at of all submission files (the native schema only carries the date part and the native import ignores it) -->
+						<element name="submission_file_dates" minOccurs="0" maxOccurs="1">
+							<complexType>
+								<sequence>
+									<element name="file_dates" minOccurs="0" maxOccurs="unbounded">
+										<complexType>
+											<attribute name="id" type="int" use="required" />
+											<attribute name="created_at" type="string" />
+											<attribute name="updated_at" type="string" />
+										</complexType>
+									</element>
+								</sequence>
+							</complexType>
+						</element>
+						<element name="stage_assignments" minOccurs="0" maxOccurs="1">
+							<complexType>
+								<sequence>
+									<element name="stage_assignment" type="pkp:stage_assignment" minOccurs="0" maxOccurs="unbounded" />
+								</sequence>
+							</complexType>
+						</element>
 						<element ref="pkp:stage" minOccurs="0" maxOccurs="unbounded" />
+						<element ref="pkp:event_log" minOccurs="0" maxOccurs="1" />
+						<element ref="pkp:email_log" minOccurs="0" maxOccurs="1" />
 					</sequence>
+					<attribute name="last_modified" type="string" />
+					<attribute name="date_last_activity" type="string" />
+					<!-- date_submitted of the native schema is a date; this one keeps the time -->
+					<attribute name="datetime_submitted" type="string" />
 					<attribute name="stage" use="required">
 						<simpleType>
 							<restriction base="string">
 								<enumeration value="submission" />
+								<enumeration value="internalReview" />
 								<enumeration value="externalReview" />
 								<enumeration value="editorial" />
 								<enumeration value="production" />
@@ -108,383 +630,217 @@
 	</element>
 	<element name="extended_articles" substitutionGroup="pkp:articles" />
 
-    <complexType name="extended_issue">
+	<complexType name="stage_assignment">
+		<attribute name="user_email" type="string" use="required" />
+		<attribute name="user_group_ref" type="string" use="required" />
+		<attribute name="recommend_only" type="int" />
+		<attribute name="can_change_metadata" type="int" />
+		<attribute name="date_assigned" type="string" />
+	</complexType>
+
+	<complexType name="stage">
 		<sequence>
-			<element ref="pkp:id" minOccurs="0" maxOccurs="unbounded" />
-			<element name="description" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element ref="pkp:issue_identification" minOccurs="1" maxOccurs="1" />
-			<!-- Metadata -->
-			<element name="date_published" type="dateTime" minOccurs="0" maxOccurs="1" />
-			<element name="date_notified" type="dateTime" minOccurs="0" maxOccurs="1" />
-			<element name="last_modified" type="dateTime" minOccurs="0" maxOccurs="1" />
-			<element name="open_access_date" type="dateTime" minOccurs="0" maxOccurs="1" />
-			<!-- sub elements -->
-			<element ref="pkp:sections" minOccurs="0" maxOccurs="1" />
-			<element ref="pkp:covers" minOccurs="0" maxOccurs="1" />
-			<element ref="pkp:issue_galleys" minOccurs="0" maxOccurs="1" />
-			<element ref="pkp:extended_articles" minOccurs="0" maxOccurs="1" />
-		</sequence>
-		<attribute name="journal_id" type="int" use="optional" />
-		<attribute name="published" type="int" use="optional" />
-		<attribute name="current" type="int" use="optional" />
-		<attribute name="access_status" type="int" use="optional" />
-		<attribute name="url_path" type="string" use="optional" />
-	</complexType>
-
-    <element name="extended_issues">
-		<complexType>
-			<sequence>
-				<element ref="pkp:extended_issue" minOccurs="0" maxOccurs="unbounded" />
-				<element name="custom_order" minOccurs="0" maxOccurs="unbounded">
-                    <complexType mixed="true">
-                        <attribute name="id" type="int" />
-                    </complexType>
-                </element>
-			</sequence>
-		</complexType>
-	</element>
-
-	<element name="plugins">
-		<complexType>
-			<sequence>
-				<element ref="pkp:plugin" minOccurs="0" maxOccurs="unbounded" />
-			</sequence>
-		</complexType>
-	</element>
-
-	<complexType name="plugin">
-		<sequence>
-			<element name="plugin_setting" type="pkp:plugin_setting" minOccurs="0" maxOccurs="unbounded" />
-		</sequence>
-		<attribute name="plugin_name" type="string" />
-	</complexType>
-
-	<complexType name="plugin_setting" mixed="true">
-		<attribute name="setting_name" type="string" />
-	</complexType>
-
-	<element name="navigation_menu_items">
-		<complexType>
-			<sequence>
-				<element ref="pkp:navigation_menu_item" minOccurs="0" maxOccurs="unbounded" />
-			</sequence>
-		</complexType>
-	</element>
-
-	<complexType name="navigation_menu_item">
-		<sequence>
-			<element name="title" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="content" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="remote_url" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-		</sequence>
-		<attribute name="id" type="int" />
-		<attribute name="type" type="string" />
-		<attribute name="path" type="string" />
-		<attribute name="title_locale_key" type="string" use="optional"/>
-	</complexType>
-
-	<element name="navigation_menus">
-		<complexType>
-			<sequence>
-				<element ref="pkp:navigation_menu" minOccurs="0" maxOccurs="unbounded" />
-			</sequence>
-		</complexType>
-	</element>
-
-	<complexType name="navigation_menu">
-		<sequence>
-			<element name="title" type="string" minOccurs="1" maxOccurs="1" />
-			<element name="area_name" type="string" minOccurs="1" maxOccurs="1" />
-			<element name="navigation_menu_item_assignment" type="pkp:navigation_menu_item_assignment" minOccurs="0" maxOccurs="unbounded" />
-		</sequence>
-	</complexType>
-
-	<complexType name="navigation_menu_item_assignment" mixed="true">
-		<attribute name="menu_item_id" type="int" />
-		<attribute name="parent_id" type="int" />
-		<attribute name="seq" type="int" />
-	</complexType>
-
-    <element name="genres">
-		<complexType>
-			<sequence>
-				<element ref="pkp:genre" minOccurs="0" maxOccurs="unbounded" />
-			</sequence>
-		</complexType>
-	</element>
-
-    <complexType name="genre">
-		<sequence>
-            <element ref="pkp:id" minOccurs="0" maxOccurs="unbounded" />
-			<element name="name" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-		</sequence>
-		<attribute name="key" type="string" />
-		<attribute name="category" type="int" />
-		<attribute name="dependent" type="int" />
-		<attribute name="supplementary" type="int" />
-		<attribute name="seq" type="int" />
-		<attribute name="enabled" type="int" />
-	</complexType>
-
-    <element name="review_forms">
-		<complexType>
-			<sequence>
-				<element ref="pkp:review_form" minOccurs="0" maxOccurs="unbounded" />
-			</sequence>
-		</complexType>
-	</element>
-
-    <complexType name="review_form">
-		<sequence>
-			<element name="title" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded" />
-			<element name="description" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-            <element ref="pkp:review_form_elements" minOccurs="0" maxOccurs="unbounded" />
-		</sequence>
-		<attribute name="id" type="int" />
-		<attribute name="seq" type="int" />
-		<attribute name="is_active" type="int" />
-	</complexType>
-
-    <element name="review_form_elements">
-		<complexType>
-			<sequence>
-				<element ref="pkp:review_form_element" minOccurs="0" maxOccurs="unbounded" />
-			</sequence>
-		</complexType>
-	</element>
-
-    <complexType name="review_form_element">
-		<sequence>
-			<element name="question" type="pkp:localizedNode" minOccurs="1" maxOccurs="unbounded" />
-			<element name="description" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="possible_responses" minOccurs="0" maxOccurs="unbounded">
-				<complexType>
-					<sequence>
-						<element name="possible_response" minOccurs="1" maxOccurs="unbounded" />
-					</sequence>
-					<attribute name="locale" type="string" />
-				</complexType>
-			</element>
-		</sequence>
-		<attribute name="id" type="int" />
-		<attribute name="seq" type="int" />
-		<attribute name="element_type" type="int" />
-		<attribute name="required" type="int" />
-		<attribute name="included" type="int" />
-	</complexType>
-
-	<element name="announcements">
-		<complexType>
-			<sequence>
-				<element ref="pkp:announcement" minOccurs="0" maxOccurs="unbounded" />
-			</sequence>
-		</complexType>
-	</element>
-
-    <complexType name="announcement">
-		<sequence>
-			<element ref="pkp:id" minOccurs="0" maxOccurs="unbounded" />
-			<element name="date_expire" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="date_posted" type="string" minOccurs="1" maxOccurs="1" />
-			<element ref="pkp:title" minOccurs="1" maxOccurs="unbounded" />
-			<element name="description_short" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="description" type="pkp:localizedNode" minOccurs="0" maxOccurs="unbounded" />
-			<element name="announcement_type_ref" type="string" maxOccurs="unbounded" />
-		</sequence>
-	</complexType>
-
-    <complexType name="stage">
-		<sequence>
-			<element ref="pkp:participant" minOccurs="0" maxOccurs="unbounded" />
 			<element ref="pkp:review_round" minOccurs="0" maxOccurs="unbounded" />
 			<element ref="pkp:decision" minOccurs="0" maxOccurs="unbounded" />
-			<element ref="pkp:queries" minOccurs="0" maxOccurs="unbounded" />
+			<element ref="pkp:queries" minOccurs="0" maxOccurs="1" />
 		</sequence>
-        <attribute name="path" type="string" />
+		<attribute name="path" type="string" use="required" />
 	</complexType>
+	<element name="stage" type="pkp:stage" />
 
-    <complexType name="participant">
-        <attribute name="user_email" type="string" />
-        <attribute name="user_group_ref" type="string" />
-        <attribute name="recommend_only" type="int" />
-        <attribute name="can_change_metadata" type="int" />
-	</complexType>
-
-    <complexType name="review_round">
-        <sequence>
-            <element ref="pkp:workflow_file" minOccurs="0" maxOccurs="unbounded" />
+	<complexType name="review_round">
+		<sequence>
+			<element ref="pkp:workflow_file" minOccurs="0" maxOccurs="unbounded" />
 			<element ref="pkp:review_assignment" minOccurs="0" maxOccurs="unbounded" />
 			<element ref="pkp:decision" minOccurs="0" maxOccurs="unbounded" />
 		</sequence>
-        <attribute name="round" type="int" />
-        <attribute name="status" type="int" />
+		<attribute name="id" type="int" />
+		<attribute name="round" type="int" use="required" />
+		<attribute name="status" type="int" />
 	</complexType>
+	<element name="review_round" type="pkp:review_round" />
 
-    <complexType name="review_assignment">
-        <sequence>
-            <element ref="pkp:workflow_file" minOccurs="0" maxOccurs="unbounded" />
+	<complexType name="review_assignment">
+		<sequence>
+			<element name="setting" type="pkp:named_setting" minOccurs="0" maxOccurs="unbounded" />
+			<element ref="pkp:workflow_file" minOccurs="0" maxOccurs="unbounded" />
 			<element name="review_files" type="string" minOccurs="0" maxOccurs="1" />
 			<element ref="pkp:response" minOccurs="0" maxOccurs="unbounded" />
 			<element ref="pkp:submission_comment" minOccurs="0" maxOccurs="unbounded" />
 		</sequence>
-        <attribute name="reviewer_email" type="string" />
-        <attribute name="method" type="string" />
-        <attribute name="declined" type="string" />
-        <attribute name="cancelled" type="string" />
-        <attribute name="date_assigned" type="string" />
-        <attribute name="date_notified" type="string" />
-        <attribute name="date_due" type="string" />
-        <attribute name="date_response_due" type="string" />
-        <attribute name="last_modified" type="string" />
-        <attribute name="considered" type="string" />
-        <attribute name="was_automatic" type="string" />
-        <attribute name="recommendation" type="string" use="optional"/>
-        <attribute name="quality" type="string" use="optional" />
-        <attribute name="competing_interests" type="string" use="optional" />
-        <attribute name="date_rated" type="string" use="optional" />
-        <attribute name="date_reminded" type="string" use="optional" />
-        <attribute name="date_confirmed" type="string" use="optional"/>
-        <attribute name="date_completed" type="string" use="optional"/>
-        <attribute name="date_acknowledged" type="string" use="optional"/>
-        <attribute name="review_form_id" type="int" use="optional"/>
+		<attribute name="id" type="int" />
+		<attribute name="reviewer_email" type="string" use="required" />
+		<attribute name="method" type="int" />
+		<attribute name="round" type="int" />
+		<attribute name="step" type="int" />
+		<attribute name="declined" type="int" />
+		<attribute name="cancelled" type="int" />
+		<attribute name="reminder_was_automatic" type="int" />
+		<attribute name="considered" type="int" />
+		<attribute name="request_resent" type="int" />
+		<attribute name="date_assigned" type="string" />
+		<attribute name="date_notified" type="string" />
+		<attribute name="date_confirmed" type="string" />
+		<attribute name="date_completed" type="string" />
+		<attribute name="date_acknowledged" type="string" />
+		<attribute name="date_due" type="string" />
+		<attribute name="date_response_due" type="string" />
+		<attribute name="last_modified" type="string" />
+		<attribute name="date_cancelled" type="string" />
+		<attribute name="date_rated" type="string" />
+		<attribute name="date_reminded" type="string" />
+		<attribute name="date_considered" type="string" />
+		<attribute name="quality" type="int" />
+		<attribute name="recommendation" type="int" />
+		<attribute name="competing_interests" type="string" />
+		<attribute name="review_form_id" type="int" />
 	</complexType>
+	<element name="review_assignment" type="pkp:review_assignment" />
 
-    <element name="workflow_file" substitutionGroup="pkp:submission_file" >
+	<!-- A submission file that belongs to a review round, review assignment or discussion note -->
+	<element name="workflow_file" substitutionGroup="pkp:submission_file">
 		<complexType>
 			<complexContent>
 				<extension base="pkp:submission_file">
-                    <attribute name="assoc_type" type="int" />
+					<attribute name="assoc_type" type="int" />
 				</extension>
 			</complexContent>
 		</complexType>
 	</element>
 
-    <complexType name="response" mixed="true">
-        <attribute name="form_element_id" type="int" />
-        <attribute name="type" type="string" />
+	<complexType name="response" mixed="true">
+		<attribute name="form_element_id" type="int" use="required" />
+		<attribute name="type" type="string" />
 	</complexType>
+	<element name="response" type="pkp:response" />
 
 	<complexType name="submission_comment">
 		<sequence>
 			<element name="title" type="string" minOccurs="0" maxOccurs="1" />
-			<element name="comments" type="string" minOccurs="1" maxOccurs="1" />
+			<element name="comments" type="string" minOccurs="0" maxOccurs="1" />
 		</sequence>
 		<attribute name="comment_type" type="int" />
 		<attribute name="role" type="int" />
-		<attribute name="author" type="string" />
-        <attribute name="date_posted" type="string" />
-        <attribute name="date_modified" type="string" />
+		<attribute name="author" type="string" use="required" />
+		<attribute name="date_posted" type="string" />
+		<attribute name="date_modified" type="string" />
 		<attribute name="viewable" type="int" />
 	</complexType>
+	<element name="submission_comment" type="pkp:submission_comment" />
 
-    <complexType name="decision">
+	<complexType name="decision">
+		<attribute name="decision" type="int" use="required" />
+		<attribute name="editor_email" type="string" use="required" />
 		<attribute name="round" type="int" />
-        <attribute name="review_round_id" type="int" />
-        <attribute name="decision" type="int" />
-        <attribute name="editor_email" type="string" />
-        <attribute name="date_decided" type="string" />
+		<attribute name="date_decided" type="string" />
 	</complexType>
+	<element name="decision" type="pkp:decision" />
 
+	<!--
+	  - Discussions
+	  -->
 	<element name="queries">
 		<complexType>
 			<sequence>
-				<element ref="pkp:query" minOccurs="1" maxOccurs="unbounded" />
+				<element ref="pkp:query" minOccurs="0" maxOccurs="unbounded" />
 			</sequence>
 		</complexType>
 	</element>
-	
 	<complexType name="query">
 		<sequence>
-			<element ref="pkp:participants" minOccurs="1" maxOccurs="unbounded" />
-			<element ref="pkp:replies" minOccurs="1" maxOccurs="unbounded" />
+			<element name="participants" minOccurs="0" maxOccurs="1">
+				<complexType>
+					<sequence>
+						<element name="participant" type="string" minOccurs="0" maxOccurs="unbounded" />
+					</sequence>
+				</complexType>
+			</element>
+			<element name="replies" minOccurs="0" maxOccurs="1">
+				<complexType>
+					<sequence>
+						<element ref="pkp:note" minOccurs="0" maxOccurs="unbounded" />
+					</sequence>
+				</complexType>
+			</element>
 		</sequence>
-		<attribute name="seq" type="int" />
+		<attribute name="seq" type="decimal" />
 		<attribute name="closed" type="int" />
+		<attribute name="date_posted" type="string" />
+		<attribute name="date_modified" type="string" />
 	</complexType>
-
-	<element name="participants">
-		<complexType>
-			<sequence>
-				<element name="participant" type="string" minOccurs="1" maxOccurs="unbounded" />
-			</sequence>
-		</complexType>
-	</element>
-
-	<element name="replies">
-		<complexType>
-			<sequence>
-				<element ref="pkp:note" minOccurs="0" maxOccurs="unbounded" />
-			</sequence>
-		</complexType>
-	</element>
+	<element name="query" type="pkp:query" />
 
 	<complexType name="note">
 		<sequence>
-			<element name="title" type="string" minOccurs="1" maxOccurs="1" />
-			<element name="contents" type="string" minOccurs="1" maxOccurs="1" />
+			<element name="title" type="string" minOccurs="0" maxOccurs="1" />
+			<element name="contents" type="string" minOccurs="0" maxOccurs="1" />
 			<element ref="pkp:workflow_file" minOccurs="0" maxOccurs="unbounded" />
 		</sequence>
+		<attribute name="user_email" type="string" />
 		<attribute name="date_created" type="string" />
 		<attribute name="date_modified" type="string" />
-		<attribute name="user_email" type="string" />
 	</complexType>
+	<element name="note" type="pkp:note" />
 
-    <complexType name="metric">
-		<attribute name="assoc_type" type="int" />
-		<attribute name="assoc_id" type="int" />
-		<attribute name="day" type="string" />
-		<attribute name="country_id" type="string" />
-		<attribute name="region" type="string" />
-		<attribute name="city" type="string" />
-		<attribute name="file_type" type="int" />
-		<attribute name="metric" type="int" />
-		<attribute name="metric_type" type="string" />
-		<attribute name="load_id" type="string" />
-	</complexType>
-
-    <element name="metrics">
+	<!--
+	  - Activity log
+	  -->
+	<element name="event_log">
 		<complexType>
 			<sequence>
-				<element ref="pkp:metric" minOccurs="0" maxOccurs="unbounded" />
+				<element name="event" minOccurs="0" maxOccurs="unbounded">
+					<complexType>
+						<sequence>
+							<element name="message" type="string" minOccurs="0" maxOccurs="1" />
+							<element name="setting" type="pkp:named_setting" minOccurs="0" maxOccurs="unbounded" />
+						</sequence>
+						<attribute name="assoc_type" type="int" use="required" />
+						<attribute name="assoc_id" type="int" use="required" />
+						<attribute name="date_logged" type="string" use="required" />
+						<attribute name="event_type" type="int" />
+						<attribute name="is_translated" type="int" />
+						<attribute name="user_email" type="string" />
+					</complexType>
+				</element>
 			</sequence>
 		</complexType>
 	</element>
 
-    <element name="journal" type="pkp:journal" />
+	<element name="email_log">
+		<complexType>
+			<sequence>
+				<element name="email" minOccurs="0" maxOccurs="unbounded">
+					<complexType>
+						<sequence>
+							<element name="from_address" type="string" minOccurs="0" maxOccurs="1" />
+							<element name="recipients" type="string" minOccurs="0" maxOccurs="1" />
+							<element name="cc_recipients" type="string" minOccurs="0" maxOccurs="1" />
+							<element name="bcc_recipients" type="string" minOccurs="0" maxOccurs="1" />
+							<element name="subject" type="string" minOccurs="0" maxOccurs="1" />
+							<element name="body" type="string" minOccurs="0" maxOccurs="1" />
+							<element name="log_user" type="string" minOccurs="0" maxOccurs="unbounded" />
+						</sequence>
+						<attribute name="date_sent" type="string" use="required" />
+						<attribute name="event_type" type="int" />
+						<attribute name="sender_email" type="string" />
+					</complexType>
+				</element>
+			</sequence>
+		</complexType>
+	</element>
 
-    <element name="extended_issue" type="pkp:extended_issue" />
-
-    <element name="plugin" type="pkp:plugin" />
-
-    <element name="navigation_menu_item" type="pkp:navigation_menu_item" />
-
-    <element name="navigation_menu" type="pkp:navigation_menu" />
-
-    <element name="genre" type="pkp:genre" />
-
-    <element name="announcement" type="pkp:announcement" />
-
-    <element name="stage" type="pkp:stage" />
-
-    <element name="participant" type="pkp:participant" />
-
-    <element name="review_round" type="pkp:review_round" />
-
-    <element name="review_assignment" type="pkp:review_assignment" />
-
-    <element name="response" type="pkp:response" />
-
-    <element name="submission_comment" type="pkp:submission_comment" />
-
-    <element name="decision" type="pkp:decision" />
-	
-	<element name="query" type="pkp:query" />
-
-	<element name="note" type="pkp:note" />
-
-	<element name="review_form" type="pkp:review_form" />
-
-	<element name="review_form_element" type="pkp:review_form_element" />
-
-    <element name="metric" type="pkp:metric" />
+	<!--
+	  - Usage statistics and public files are stored outside the XML (in the archive);
+	  - the elements only carry the location.
+	  -->
+	<element name="metrics">
+		<complexType>
+			<attribute name="src" type="string" use="required" />
+		</complexType>
+	</element>
+	<element name="public_files">
+		<complexType>
+			<attribute name="src" type="string" use="required" />
+		</complexType>
+	</element>
 </schema>

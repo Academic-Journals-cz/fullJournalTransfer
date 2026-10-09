@@ -1,24 +1,29 @@
 <?php
 
 /**
+ * @file plugins/importexport/fullJournalTransfer/filter/import/NativeXmlReviewFormFilter.php
+ *
  * Copyright (c) 2014-2024 Lepidus Tecnologia
+ * Copyright (c) 2025-2026 academic-journals-cz
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
+ *
+ * @class NativeXmlReviewFormFilter
+ *
+ * @brief Imports review forms with their elements.
  */
+
 namespace APP\plugins\importexport\fullJournalTransfer\filter\import;
 
-use PKP\plugins\importexport\native\filter\NativeImportFilter;
-use PKP\db\DAORegistry;
 use APP\core\Application;
-use DOMDocument;
+use APP\plugins\importexport\fullJournalTransfer\classes\FullJournalFilterTrait;
 use DOMElement;
-use PKP\plugins\PluginRegistry;
-use APP\facades\Repo;
-use Transliterator;
-use APP\core\Services;
-use PKP\file\ContextFileManager;
+use PKP\db\DAORegistry;
+use PKP\plugins\importexport\native\filter\NativeImportFilter;
 
 class NativeXmlReviewFormFilter extends NativeImportFilter
 {
+    use FullJournalFilterTrait;
+
     public function __construct($filterGroup)
     {
         $this->setDisplayName('Native XML review form import');
@@ -40,71 +45,50 @@ class NativeXmlReviewFormFilter extends NativeImportFilter
         return static::class;
     }
 
+    /**
+     * @param DOMElement $node
+     */
     public function handleElement($node)
     {
-        $deployment = $this->getDeployment();
+        $deployment = $this->getFullJournalDeployment();
         $context = $deployment->getContext();
 
-        $reviewFormDAO = DAORegistry::getDAO('ReviewFormDAO');
-        $reviewForm = $reviewFormDAO->newDataObject();
+        $reviewFormDao = DAORegistry::getDAO('ReviewFormDAO'); /** @var \PKP\reviewForm\ReviewFormDAO $reviewFormDao */
+        $reviewForm = $reviewFormDao->newDataObject();
+        $reviewForm->setAssocType(Application::ASSOC_TYPE_JOURNAL);
+        $reviewForm->setAssocId((int) $context->getId());
+        $reviewForm->setActive((int) $node->getAttribute('is_active'));
+        $reviewForm->setSequence((float) $node->getAttribute('seq'));
 
-        $reviewForm->setAssocType($context->getAssocType());
-        $reviewForm->setAssocId($context->getId());
-
-        if ($node->getAttribute('is_active')) {
-            $reviewForm->setActive($node->getAttribute('is_active'));
-        }
-        if ($node->getAttribute('seq')) {
-            $reviewForm->setSequence($node->getAttribute('seq'));
-        }
-
-        for ($childNode = $node->firstChild; $childNode !== null; $childNode = $childNode->nextSibling) {
-            if (is_a($childNode, 'DOMElement')) {
-                switch ($childNode->tagName) {
-                    case 'title':
-                        $locale = $childNode->getAttribute('locale');
-                        $reviewForm->setTitle($childNode->textContent, $locale);
-                        break;
-                    case 'description':
-                        $locale = $childNode->getAttribute('locale');
-                        $reviewForm->setDescription($childNode->textContent, $locale);
-                        break;
-                    case 'review_form_elements':
-                        $reviewFormElementsNode = $childNode;
-                        break;
-                }
+        $reviewFormElementsNode = null;
+        foreach ($this->childElements($node) as $childNode) {
+            switch ($childNode->tagName) {
+                case 'title':
+                    [$locale, $value] = $this->parseLocalizedContent($childNode);
+                    $reviewForm->setTitle($value, $locale ?: $context->getPrimaryLocale());
+                    break;
+                case 'description':
+                    [$locale, $value] = $this->parseLocalizedContent($childNode);
+                    $reviewForm->setDescription($value, $locale ?: $context->getPrimaryLocale());
+                    break;
+                case 'review_form_elements':
+                    $reviewFormElementsNode = $childNode;
+                    break;
             }
         }
 
-        $reviewFormDAO->insertObject($reviewForm);
+        $reviewFormDao->insertObject($reviewForm);
         $deployment->setReviewForm($reviewForm);
-        $deployment->setReviewFormDBId($node->getAttribute('id'), $reviewForm->getId());
+        $deployment->setReviewFormDBId($node->getAttribute('id'), (int) $reviewForm->getId());
+        $deployment->incrementCounter('review forms');
 
         if ($reviewFormElementsNode) {
-            $this->parseReviewFormElements($reviewFormElementsNode);
-        }
-
-        return $reviewForm;
-    }
-
-    public function parseReviewFormElements($node)
-    {
-        for ($n = $node->firstChild; $n !== null; $n = $n->nextSibling) {
-            if (is_a($n, 'DOMElement') && $n->tagName  === 'review_form_element') {
-                $this->parseReviewFormElement($n);
+            foreach ($this->childElements($reviewFormElementsNode, 'review_form_element') as $elementNode) {
+                $this->importNodeWith('native-xml=>review-form-element', $elementNode);
             }
         }
-    }
+        $deployment->setReviewForm(null);
 
-    public function parseReviewFormElement($node)
-    {
-        $filterDao = DAORegistry::getDAO('FilterDAO');
-        $importFilters = $filterDao->getObjectsByGroup('native-xml=>review-form-element');
-        assert(count($importFilters) == 1);
-        $importFilter = array_shift($importFilters);
-        $importFilter->setDeployment($this->getDeployment());
-        $reviewFormElementsDocs = new DOMDocument();
-        $reviewFormElementsDocs->appendChild($reviewFormElementsDocs->importNode($node, true));
-        return $importFilter->execute($reviewFormElementsDocs);
+        return $reviewForm;
     }
 }
